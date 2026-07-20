@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local

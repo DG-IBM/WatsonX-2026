@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-void:        #020408;
+  --color-deep-space:  #060d1a;
+  --color-nebula:      #0d1f35;
+  --color-panel:       #0a1628;
+  --color-panel-light: #0f2340;
+
+  --color-orbit-blue:  #00aaff;
+  --color-orbit-glow:  #0066cc;
+  --color-orbit-dim:   #003d7a;
+
+  --color-gold:        #ffd700;
+  --color-gold-dim:    #b8960a;
+
+  --color-alert:       #ff4444;
+  --color-alert-dim:   #8b0000;
+
+  --color-signal:      #00ff88;
+  --color-signal-dim:  #006633;
+
+  --color-text-primary:   #e8f4fd;
+  --color-text-secondary: #7aaccc;
+  --color-text-muted:     #3d6680;
+  --color-text-terminal:  #00ff88;
+
+  --planet-gold:    #f4a460;
+  --planet-storm:   #4a3728;
+  --planet-ice:     #a8d4e6;
+  --planet-lava:    #cc3300;
+  --planet-ocean:   #1a6b8a;
+  --planet-gas:     #9b59b6;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background-color: var(--color-void);
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--color-deep-space); }
+  ::-webkit-scrollbar-thumb { background: var(--color-orbit-dim); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-orbit-blue); }
+
+  pre, code { font-family: 'Space Mono', monospace; }
+}
+
+@layer components {
+
+  /* ── Fonts ─────────────────────────────────────────────────── */
+  .font-terminal { font-family: 'Space Mono', monospace; }
+
+  /* ── Panels ────────────────────────────────────────────────── */
+  .glass-panel {
+    background: rgba(13, 31, 53, 0.80);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 170, 255, 0.12);
+    border-radius: 14px;
+  }
+
+  .glass-panel-bright {
+    background: rgba(10, 22, 40, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 170, 255, 0.28);
+    border-radius: 16px;
+  }
+
+  .terminal-border {
+    border: 1px solid rgba(0, 255, 136, 0.35) !important;
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 136, 0.08),
+      0 0 24px rgba(0, 255, 136, 0.12),
+      inset 0 0 24px rgba(0, 255, 136, 0.03);
+  }
+
+  .orbit-glow {
+    box-shadow:
+      0 0 24px rgba(0, 170, 255, 0.35),
+      0 0 80px rgba(0, 170, 255, 0.08);
+  }
+
+  .gold-glow {
+    box-shadow:
+      0 0 24px rgba(255, 215, 0, 0.45),
+      0 0 80px rgba(255, 215, 0, 0.12);
+  }
+
+  /* ── Text gradients ────────────────────────────────────────── */
+  .text-gradient-orbit {
+    background: linear-gradient(135deg, #00aaff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Scanline overlay ──────────────────────────────────────── */
+  .scanline { position: relative; }
+  .scanline::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 136, 0.012) 2px,
+      rgba(0, 255, 136, 0.012) 4px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* ── HUD overlay ───────────────────────────────────────────── */
+  .hud-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-overlay > * { pointer-events: auto; }
+
+  /* ── Planet modal ──────────────────────────────────────────── */
+  .planet-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 4, 8, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ── Typewriter cursor ─────────────────────────────────────── */
+  .typewriter-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--color-text-terminal);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink-cursor 1s step-end infinite;
+  }
+
+  /* ── Challenge badges ──────────────────────────────────────── */
+  .badge-scenario       { background: rgba(0,170,255,0.12); color: #00aaff; border: 1px solid rgba(0,170,255,0.28); }
+  .badge-roleplay       { background: rgba(155,89,182,0.12); color: #b06fe0; border: 1px solid rgba(155,89,182,0.28); }
+  .badge-detective      { background: rgba(255,180,0,0.12); color: #ffb400; border: 1px solid rgba(255,180,0,0.28); }
+  .badge-build          { background: rgba(0,255,136,0.10); color: #00ff88; border: 1px solid rgba(0,255,136,0.28); }
+  .badge-transmission   { background: rgba(255,107,53,0.12); color: #ff6b35; border: 1px solid rgba(255,107,53,0.28); }
+
+  /* ── Orbit loading rings ───────────────────────────────────── */
+  .orbit-ring {
+    border: 1px solid rgba(0, 170, 255, 0.25);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .orbit-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    position: absolute;
+    top: -3px; left: calc(50% - 3px);
+  }
+}
+
+/* ── Keyframe animations ────────────────────────────────────── */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+@keyframes orbit-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes transmission-flicker {
+  0%, 94%, 100% { opacity: 1; }
+  95% { opacity: 0.55; }
+  96% { opacity: 1; }
+  97% { opacity: 0.35; }
+  98% { opacity: 0.9; }
+}
+
+@keyframes xp-float {
+  0%   { opacity: 0; transform: translateY(0)    scale(0.5); }
+  30%  { opacity: 1; transform: translateY(-20px) scale(1.2); }
+  70%  { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.8); }
+}
+
+@keyframes planet-unlock {
+  0%   { filter: grayscale(100%) brightness(0.3); transform: scale(1); }
+  50%  { filter: grayscale(0%)   brightness(1.5); transform: scale(1.15); }
+  100% { filter: grayscale(0%)   brightness(1);   transform: scale(1); }
+}
+
+@keyframes slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Animation utility classes ──────────────────────────────── */
+.animate-pulse-glow          { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-float               { animation: float 3.5s ease-in-out infinite; }
+.animate-blink-cursor        { animation: blink-cursor 1s step-end infinite; }
+.animate-xp-float            { animation: xp-float 1.5s ease-out forwards; }
+.animate-planet-unlock       { animation: planet-unlock 1.2s ease-in-out forwards; }
+.animate-transmission-flicker { animation: transmission-flicker 5s linear infinite; }
+.animate-spin                { animation: spin 0.9s linear infinite; }
+.animate-slide-down          { animation: slide-down 0.4s ease-out forwards; }
+.animate-fade-in-up          { animation: fade-in-up 0.5s ease-out forwards; }
+
+/* ── Print ──────────────────────────────────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  .glass-panel, .glass-panel-bright { background: #fff; border: 1px solid #ccc; }
+}

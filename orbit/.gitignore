@@ -1,0 +1,14 @@
+# Environment files — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# Next.js build output (may contain inlined env vars)
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
