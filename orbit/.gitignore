@@ -10,5 +10,15 @@ out/
 # Dependencies
 node_modules/
 
+# TypeScript build cache
+*.tsbuildinfo
+
 # macOS
 .DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Vercel
+.vercel
