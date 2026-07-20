@@ -11,13 +11,15 @@ export default function ChatSidebar() {
     setChatOpen,
     chatMessages,
     userProfile,
-    planets,
+    nodes,
     mcpDocuments,
     mcpConnection,
+    selectedNodeId,
     addChatMessage,
   } = useOrbitStore();
 
-  const completedPlanets = planets.filter((p) => p.status === 'completed');
+  const completedNodes = nodes.filter((n) => n.status === 'complete');
+  const selectedNode = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) ?? null : null;
 
   if (!userProfile) return null;
 
@@ -66,8 +68,9 @@ export default function ChatSidebar() {
             <ChatInterface
               messages={chatMessages}
               userProfile={userProfile}
-              completedPlanets={completedPlanets}
+              completedNodes={completedNodes}
               documents={mcpDocuments}
+              selectedNode={selectedNode}
               onSendMessage={addChatMessage}
               projectName={
                 mcpConnection.url

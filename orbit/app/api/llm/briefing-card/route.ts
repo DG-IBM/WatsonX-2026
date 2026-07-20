@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM } from '@/lib/anthropic';
-import { buildBriefingCardPrompt, BRIEFING_CARD_SYSTEM } from '@/lib/prompts';
-import type { Planet, UserProfile, MCPDocument, MissionBriefingCard } from '@/types/orbit';
+import type { KnowledgeNode, UserProfile, MCPDocument, MissionBriefingCard } from '@/types/orbit';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       userProfile: UserProfile;
-      completedPlanets: Planet[];
+      completedPlanets: KnowledgeNode[];
       documents: MCPDocument[];
     };
 
@@ -17,9 +16,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'userProfile is required' }, { status: 400 });
     }
 
-    const userPrompt = buildBriefingCardPrompt(userProfile, completedPlanets, documents);
+    const nodesSummary = completedPlanets.map((n) => `- ${n.title}`).join('\n');
+    const docContext = documents.map((d) => `SOURCE: ${d.source} | TITLE: ${d.title}\n${d.content.slice(0, 500)}\n---`).join('\n');
 
-    const rawResponse = await callLLM(BRIEFING_CARD_SYSTEM, userPrompt, {
+    const userPrompt = `ROLE: ${userProfile.parsedRole}
+FOCUS: ${userProfile.parsedFocus.join(', ')}
+
+COMPLETED KNOWLEDGE NODES:
+${nodesSummary}
+
+PROJECT DOCUMENTATION:
+${docContext}
+
+Generate a Mission Briefing Card as JSON matching this interface exactly:
+{
+  "projectSnapshot": "string — 3 sentences summarising the project",
+  "roleAndOwnership": "string — what this person owns and is responsible for",
+  "topPriorities": ["string", "string", "string"],
+  "topRisks": ["string", "string", "string"],
+  "keyContacts": [
+    { "name": "string", "role": "string", "owns": "string" }
+  ],
+  "thingsNotToBreak": ["string", "string", "string"],
+  "firstWeekFocus": "string — specific, actionable first week guidance"
+}`;
+
+    const rawResponse = await callLLM('You generate briefing cards. Return only valid JSON.', userPrompt, {
       maxTokens: 3000,
       temperature: 0.6,
     });

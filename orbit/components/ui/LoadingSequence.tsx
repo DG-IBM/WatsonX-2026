@@ -11,12 +11,12 @@ interface LoadingSequenceProps {
 const DEFAULT_MESSAGES = [
   'Scanning knowledge base...',
   'Analysing project documentation...',
-  'Identifying knowledge domains...',
+  'Identifying knowledge areas...',
   'Calibrating to your role...',
-  'Mapping your solar system...',
-  'Charting orbital paths...',
-  'Preparing launch sequence...',
-  'T-minus launch...',
+  'Building your knowledge map...',
+  'Generating quiz questions...',
+  'Preparing verification system...',
+  'Almost ready...',
 ];
 
 export default function LoadingSequence({
@@ -136,7 +136,7 @@ export default function LoadingSequence({
             className="text-3xl font-bold mb-6 tracking-widest"
             style={{ color: 'var(--color-text-primary)' }}
           >
-            MAPPING YOUR UNIVERSE
+            BUILDING YOUR KNOWLEDGE MAP
           </motion.h1>
 
           {/* Typewriter message */}

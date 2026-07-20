@@ -6,7 +6,43 @@ import { motion } from 'framer-motion';
 import { useOrbitStore } from '@/store/orbitStore';
 import LoadingSequence from '@/components/ui/LoadingSequence';
 import ParticleBackground from '@/components/ui/ParticleBackground';
-import type { Planet, UserProfile } from '@/types/orbit';
+import type { KnowledgeNode, UserProfile } from '@/types/orbit';
+
+/** Fire-and-forget: enrich one node after the map is shown */
+async function enrichNodeInBackground(
+  node: KnowledgeNode,
+  roleDescription: string,
+  documents: unknown[],
+  onDone: (nodeId: string, patch: Partial<KnowledgeNode>) => void
+) {
+  try {
+    const res = await fetch('/api/llm/enrich-node', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nodeId: node.id,
+        nodeTitle: node.title,
+        nodeDescription: node.summary,
+        roleDescription,
+        documents,
+      }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    onDone(node.id, {
+      summary: data.summary,
+      keyTakeaways: data.keyTakeaways,
+      roleRelevance: data.roleRelevance,
+      diagrams: data.diagrams,
+      keyContacts: data.keyContacts,
+      links: data.links,
+      sources: data.sources,
+      quiz: data.quiz,
+    });
+  } catch {
+    // silently ignore — node stays as skeleton
+  }
+}
 
 const ROLE_TEMPLATES: Record<string, string> = {
   '+ Frontend Developer':
@@ -23,8 +59,11 @@ const ROLE_TEMPLATES: Record<string, string> = {
 
 export default function RoleScreen() {
   const router = useRouter();
-  const { mcpConnection, mcpDocuments, setMCPDocuments, setUserProfile, setPlanets, setLoading, isLoading, setCurrentScreen } =
-    useOrbitStore();
+  const {
+    mcpDocuments, setMCPDocuments, setUserProfile, setNodes,
+    setOnboardingBriefingCard, setLoading, isLoading, setCurrentScreen,
+    enrichNode, resetForNewSession,
+  } = useOrbitStore();
   const [roleText, setRoleText] = useState('');
 
   const charCount = roleText.length;
@@ -37,39 +76,53 @@ export default function RoleScreen() {
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
-    setLoading(true, 'Scanning knowledge base...');
+    // Clear any stale state from a previous failed run
+    resetForNewSession();
+    setLoading(true, 'Building your knowledge map...');
 
     try {
+      // ── Phase 1: skeleton (fast, ~10s) ───────────────────────────
       const res = await fetch('/api/llm/architect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roleDescription: roleText,
-          mcpUrl: mcpConnection.url,
-          mcpToken: mcpConnection.token,
-          mcpApiKey: mcpConnection.token,
           documents: mcpDocuments,
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error ?? 'Architecture failed');
 
-      if (Array.isArray(data.documents) && data.documents.length > 0) {
-        setMCPDocuments(data.documents);
-      }
+      const freshDocs = Array.isArray(data.documents) && data.documents.length > 0
+        ? data.documents : mcpDocuments;
+      if (freshDocs !== mcpDocuments) setMCPDocuments(freshDocs);
+
       setUserProfile(data.userProfile as UserProfile);
-      setPlanets(data.planets as Planet[]);
+      const nodes = (data.nodes ?? data.planets) as KnowledgeNode[];
+      setNodes(nodes);
+      if (data.onboardingBriefingCard) {
+        setOnboardingBriefingCard(data.onboardingBriefingCard);
+      }
+
+      // Navigate to map immediately — user sees nodes straight away
       setCurrentScreen('solar-system');
+      setLoading(false);
       router.push('/solar-system');
+
+      // ── Phase 2: enrich each node in background (non-blocking) ───
+      // Stagger requests 400ms apart so we don't hammer the LLM gateway
+      nodes.forEach((node, idx) => {
+        setTimeout(() => {
+          enrichNodeInBackground(node, roleText, freshDocs, enrichNode);
+        }, idx * 400);
+      });
+
     } catch (err) {
       console.error(err);
-      // Still navigate on error using demo data
-      setCurrentScreen('solar-system');
-      router.push('/solar-system');
-    } finally {
       setLoading(false);
+      // Don't navigate — show error in place so user can retry
+      alert('Failed to generate your knowledge map. Please check your connection and try again.');
     }
   };
 
@@ -137,13 +190,13 @@ export default function RoleScreen() {
                     className="text-sm italic"
                     style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6 }}
                   >
-                    &quot;Tell us who you are, and the universe will reshape itself around you.&quot;
+                    &quot;Describe your role and we&apos;ll build a personalised knowledge map from your project docs.&quot;
                   </p>
                   <p
                     className="mt-2 text-xs"
                     style={{ color: 'var(--color-text-muted)' }}
                   >
-                    Your solar system is built uniquely for your role.
+                    Your Bluebook is generated uniquely for your role.
                   </p>
                 </div>
               </motion.div>
@@ -162,7 +215,7 @@ export default function RoleScreen() {
                       className="font-terminal text-xs tracking-widest"
                       style={{ color: 'var(--color-text-terminal)', fontSize: '11px' }}
                     >
-                      MISSION BRIEFING — WHO ARE YOU?
+                      IBM BLUEBOOK — WHO ARE YOU?
                     </p>
                     <div
                       className="mt-2"
@@ -227,7 +280,7 @@ export default function RoleScreen() {
                       cursor: canSubmit ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    CHART MY SOLAR SYSTEM
+                    BUILD MY KNOWLEDGE MAP
                   </button>
                 </div>
               </motion.div>

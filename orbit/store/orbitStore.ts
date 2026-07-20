@@ -5,33 +5,96 @@ import type {
   MCPConnection,
   MCPDocument,
   UserProfile,
-  Planet,
-  Debrief,
+  KnowledgeNode,
+  QuizScore,
+  NodeStatus,
+  OnboardingBriefingCard,
   MissionBriefingCard,
-  AstronautRank,
   ChatMessage,
   AppScreen,
+  OverallScore,
+  AstronautRank,
 } from '@/types/orbit';
-import { calculateRank } from '@/lib/gameUtils';
+
+// ─── Overall score computation ────────────────────────────────────────────────
+
+function computeOverallScore(nodes: KnowledgeNode[]): OverallScore {
+  const totalNodes = nodes.length;
+  const completedNodes = nodes.filter((n) => n.status === 'complete').length;
+  const greenNodes = nodes.filter((n) => n.score?.nodeColour === 'green').length;
+  const yellowNodes = nodes.filter((n) => n.score?.nodeColour === 'yellow').length;
+  const redNodes = nodes.filter((n) => n.score?.nodeColour === 'red').length;
+
+  const scored = nodes.filter((n) => n.score !== null);
+  const averagePercentage =
+    scored.length > 0
+      ? Math.round(scored.reduce((acc, n) => acc + (n.score?.percentage ?? 0), 0) / scored.length)
+      : 0;
+
+  let readinessLevel: OverallScore['readinessLevel'] = 'Not Started';
+  if (completedNodes === 0) {
+    readinessLevel = 'Not Started';
+  } else if (completedNodes < totalNodes) {
+    readinessLevel = 'In Progress';
+  } else if (completedNodes === totalNodes && redNodes === 0) {
+    readinessLevel = greenNodes === totalNodes ? 'Fully Prepared' : 'Ready';
+  } else {
+    readinessLevel = 'Partially Ready';
+  }
+
+  return {
+    totalNodes,
+    completedNodes,
+    greenNodes,
+    yellowNodes,
+    redNodes,
+    averagePercentage,
+    readinessLevel,
+  };
+}
+
+// ─── Store actions ────────────────────────────────────────────────────────────
 
 interface OrbitActions {
   setMCPConnection: (connection: Partial<MCPConnection>) => void;
   setMCPDocuments: (documents: MCPDocument[]) => void;
   setUserProfile: (profile: UserProfile) => void;
-  setPlanets: (planets: Planet[]) => void;
-  updatePlanet: (planetId: string, updates: Partial<Planet>) => void;
+  // Node actions
+  setNodes: (nodes: KnowledgeNode[]) => void;
+  selectNode: (id: string | null) => void;
+  updateNodeScore: (nodeId: string, score: QuizScore) => void;
+  updateNodeStatus: (nodeId: string, status: NodeStatus) => void;
+  enrichNode: (nodeId: string, patch: Partial<KnowledgeNode>) => void;
+  recalculateOverallScore: () => void;
+  // Legacy planet compat
+  setPlanets: (planets: KnowledgeNode[]) => void;
+  updatePlanet: (planetId: string, updates: Partial<KnowledgeNode>) => void;
   setActivePlanet: (planetId: string | null) => void;
   setActivePlanetPhase: (phase: OrbitState['activePlanetPhase']) => void;
-  completePlanet: (planetId: string, debrief: Debrief) => void;
+  completePlanet: (planetId: string, debrief: unknown) => void;
   addXP: (amount: number) => void;
+  setOnboardingBriefingCard: (card: OnboardingBriefingCard) => void;
   setMissionBriefingCard: (card: MissionBriefingCard) => void;
   setAstronautRank: (rank: AstronautRank) => void;
+  // Chat
   addChatMessage: (message: ChatMessage) => void;
   setChatOpen: (open: boolean) => void;
+  // App
   setCurrentScreen: (screen: AppScreen) => void;
   setLoading: (isLoading: boolean, message?: string) => void;
+  resetForNewSession: () => void;
   resetGame: () => void;
 }
+
+const emptyOverallScore: OverallScore = {
+  totalNodes: 0,
+  completedNodes: 0,
+  greenNodes: 0,
+  yellowNodes: 0,
+  redNodes: 0,
+  averagePercentage: 0,
+  readinessLevel: 'Not Started',
+};
 
 const initialState: OrbitState = {
   mcpConnection: {
@@ -43,17 +106,22 @@ const initialState: OrbitState = {
   },
   mcpDocuments: [],
   userProfile: null,
-  planets: [],
-  activePlanetId: null,
-  activePlanetPhase: null,
-  totalXP: 0,
+  nodes: [],
+  selectedNodeId: null,
+  overallScore: emptyOverallScore,
+  onboardingBriefingCard: null,
   missionBriefingCard: null,
-  astronautRank: null,
   chatMessages: [],
   isChatOpen: false,
   currentScreen: 'connect',
   isLoading: false,
   loadingMessage: '',
+  // Legacy compat
+  planets: [],
+  activePlanetId: null,
+  activePlanetPhase: null,
+  totalXP: 0,
+  astronautRank: null,
 };
 
 export const useOrbitStore = create<OrbitState & OrbitActions>()(
@@ -70,59 +138,104 @@ export const useOrbitStore = create<OrbitState & OrbitActions>()(
 
       setUserProfile: (profile) => set({ userProfile: profile }),
 
-      setPlanets: (planets) => set({ planets }),
+      // ── Node actions ──────────────────────────────────────────
+
+      setNodes: (nodes) =>
+        set({
+          nodes,
+          planets: nodes, // keep legacy alias in sync
+          overallScore: computeOverallScore(nodes),
+        }),
+
+      selectNode: (id) =>
+        set((state) => {
+          // Mark the node as reading when selected (if untouched)
+          const nodes = state.nodes.map((n) =>
+            n.id === id && n.status === 'untouched' ? { ...n, status: 'reading' as NodeStatus } : n
+          );
+          return {
+            selectedNodeId: id,
+            nodes,
+            planets: nodes,
+            activePlanetId: id,
+            activePlanetPhase: id ? 'transmission' : null,
+          };
+        }),
+
+      updateNodeScore: (nodeId, score) =>
+        set((state) => {
+          const nodes = state.nodes.map((n) =>
+            n.id === nodeId ? { ...n, score, status: 'complete' as NodeStatus } : n
+          );
+          return {
+            nodes,
+            planets: nodes,
+            overallScore: computeOverallScore(nodes),
+          };
+        }),
+
+      updateNodeStatus: (nodeId, status) =>
+        set((state) => {
+          const nodes = state.nodes.map((n) =>
+            n.id === nodeId ? { ...n, status } : n
+          );
+          return { nodes, planets: nodes, overallScore: computeOverallScore(nodes) };
+        }),
+
+      enrichNode: (nodeId, patch) =>
+        set((state) => {
+          const nodes = state.nodes.map((n) =>
+            n.id === nodeId ? { ...n, ...patch } : n
+          );
+          return { nodes, planets: nodes };
+        }),
+
+      recalculateOverallScore: () =>
+        set((state) => ({ overallScore: computeOverallScore(state.nodes) })),
+
+      // ── Legacy planet compat ──────────────────────────────────
+
+      setPlanets: (planets) =>
+        set({
+          planets,
+          nodes: planets,
+          overallScore: computeOverallScore(planets),
+        }),
 
       updatePlanet: (planetId, updates) =>
-        set((state) => ({
-          planets: state.planets.map((p) =>
-            p.id === planetId ? { ...p, ...updates } : p
-          ),
-        })),
+        set((state) => {
+          const nodes = state.nodes.map((n) =>
+            n.id === planetId ? { ...n, ...updates } : n
+          );
+          return { nodes, planets: nodes };
+        }),
 
       setActivePlanet: (planetId) =>
         set({
           activePlanetId: planetId,
+          selectedNodeId: planetId,
           activePlanetPhase: planetId ? 'transmission' : null,
         }),
 
       setActivePlanetPhase: (phase) => set({ activePlanetPhase: phase }),
 
-      completePlanet: (planetId, debrief) =>
+      completePlanet: (planetId, _debrief) =>
         set((state) => {
-          const planets = state.planets.map((p) => {
-            if (p.id === planetId) {
-              return {
-                ...p,
-                status: 'completed' as const,
-                debrief,
-                xpAwarded: debrief.xpAwarded,
-              };
-            }
-            // Unlock the next planet in order
-            const completedPlanet = state.planets.find((pp) => pp.id === planetId);
-            if (completedPlanet && p.order === completedPlanet.order + 1 && p.status === 'locked') {
-              return { ...p, status: 'available' as const };
-            }
-            return p;
-          });
-
-          const newTotalXP = state.totalXP + debrief.xpAwarded;
-          const newRank = calculateRank(newTotalXP);
-
+          const nodes = state.nodes.map((n) =>
+            n.id === planetId ? { ...n, status: 'complete' as NodeStatus } : n
+          );
           return {
-            planets,
-            totalXP: newTotalXP,
-            astronautRank: newRank,
+            nodes,
+            planets: nodes,
+            overallScore: computeOverallScore(nodes),
             activePlanetId: null,
             activePlanetPhase: null,
           };
         }),
 
-      addXP: (amount) =>
-        set((state) => {
-          const newXP = state.totalXP + amount;
-          return { totalXP: newXP, astronautRank: calculateRank(newXP) };
-        }),
+      addXP: () => set({}), // no-op — XP replaced by quiz scores
+
+      setOnboardingBriefingCard: (card) => set({ onboardingBriefingCard: card }),
 
       setMissionBriefingCard: (card) => set({ missionBriefingCard: card }),
 
@@ -140,6 +253,23 @@ export const useOrbitStore = create<OrbitState & OrbitActions>()(
       setLoading: (isLoading, message = '') =>
         set({ isLoading, loadingMessage: message }),
 
+      // Clear nodes/briefing/profile before a new generation — prevents stale
+      // state showing when the architect call fails or is retried
+      resetForNewSession: () =>
+        set({
+          nodes: [],
+          planets: [],
+          selectedNodeId: null,
+          activePlanetId: null,
+          onboardingBriefingCard: null,
+          userProfile: null,
+          overallScore: {
+            totalNodes: 0, completedNodes: 0,
+            greenNodes: 0, yellowNodes: 0, redNodes: 0,
+            averagePercentage: 0, readinessLevel: 'Not Started',
+          },
+        }),
+
       resetGame: () => set(initialState),
     }),
     {
@@ -148,13 +278,24 @@ export const useOrbitStore = create<OrbitState & OrbitActions>()(
         mcpConnection: state.mcpConnection,
         mcpDocuments: state.mcpDocuments,
         userProfile: state.userProfile,
-        planets: state.planets,
-        totalXP: state.totalXP,
+        nodes: state.nodes,
+        planets: state.nodes,
+        overallScore: state.overallScore,
+        onboardingBriefingCard: state.onboardingBriefingCard,
         missionBriefingCard: state.missionBriefingCard,
-        astronautRank: state.astronautRank,
         chatMessages: state.chatMessages,
         currentScreen: state.currentScreen,
       }),
+      // On rehydrate, sync planets alias and recompute score
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.planets = state.nodes;
+          state.overallScore = computeOverallScore(state.nodes);
+          state.selectedNodeId = null;
+          state.activePlanetId = null;
+          state.activePlanetPhase = null;
+        }
+      },
     }
   )
 );

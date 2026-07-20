@@ -1,56 +1,37 @@
-import type { Planet, MCPDocument, Challenge, AstronautRank } from '@/types/orbit';
+import type { KnowledgeNode, MCPDocument, Challenge } from '@/types/orbit';
 
-// ─── XP & Ranking ─────────────────────────────────────────────────────────────
+// ─── Node / Readiness utilities ────────────────────────────────────────────────
 
-export function calculateRank(totalXP: number): AstronautRank {
-  if (totalXP >= 900) return 'Mission Veteran';
-  if (totalXP >= 700) return 'Commander';
-  if (totalXP >= 500) return 'Specialist';
-  if (totalXP >= 300) return 'Explorer';
-  return 'Cadet';
+export function getCompletedCount(nodes: KnowledgeNode[]): number {
+  return nodes.filter((n) => n.status === 'complete').length;
 }
 
-export function getXPToNextRank(totalXP: number): number {
-  if (totalXP >= 900) return 0;
-  if (totalXP >= 700) return 900 - totalXP;
-  if (totalXP >= 500) return 700 - totalXP;
-  if (totalXP >= 300) return 500 - totalXP;
-  return 300 - totalXP;
+export function getAllNodesComplete(nodes: KnowledgeNode[]): boolean {
+  return nodes.length > 0 && nodes.every((n) => n.status === 'complete');
 }
 
-export function getRankDescription(rank: AstronautRank): string {
-  switch (rank) {
-    case 'Cadet':          return 'Your journey begins.';
-    case 'Explorer':       return 'Curiosity is your compass.';
-    case 'Specialist':     return 'You know this terrain.';
-    case 'Commander':      return 'This mission needed you.';
-    case 'Mission Veteran': return 'The project has no secrets from you.';
-  }
+export function getNextUnverifiedNode(nodes: KnowledgeNode[]): KnowledgeNode | null {
+  const sorted = [...nodes].sort((a, b) => a.order - b.order);
+  return sorted.find((n) => n.status === 'untouched') ?? null;
 }
 
-export function getRankIcon(rank: AstronautRank): string {
-  switch (rank) {
-    case 'Cadet':          return '🚀';
-    case 'Explorer':       return '🌍';
-    case 'Specialist':     return '⭐';
-    case 'Commander':      return '🏆';
-    case 'Mission Veteran': return '🌌';
-  }
+// ─── Legacy XP / rank stubs (retained for backward compat) ────────────────────
+// These are no longer the primary scoring mechanism — use OverallScore instead.
+
+export function calculateRank(_totalXP: number): 'Not Started' {
+  return 'Not Started'; // replaced by ReadinessLevel from OverallScore
 }
 
-// ─── Planet utilities ──────────────────────────────────────────────────────────
-
-export function getNextAvailablePlanet(planets: Planet[]): Planet | null {
-  const sorted = [...planets].sort((a, b) => a.order - b.order);
-  return sorted.find((p) => p.status === 'available') ?? null;
+export function getXPToNextRank(_totalXP: number): number {
+  return 0;
 }
 
-export function getAllPlanetsComplete(planets: Planet[]): boolean {
-  return planets.length > 0 && planets.every((p) => p.status === 'completed');
+export function getRankDescription(_rank: string): string {
+  return '';
 }
 
-export function getCompletedCount(planets: Planet[]): number {
-  return planets.filter((p) => p.status === 'completed').length;
+export function getRankIcon(_rank: string): string {
+  return '';
 }
 
 // ─── Document utilities ───────────────────────────────────────────────────────
@@ -89,7 +70,7 @@ export function summariseDocuments(documents: MCPDocument[]): string {
     .join('\n');
 }
 
-// ─── Challenge response formatter ─────────────────────────────────────────────
+// ─── Legacy challenge response formatter ──────────────────────────────────────
 
 export function formatUserResponse(challenge: Challenge): string {
   switch (challenge.type) {

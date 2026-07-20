@@ -6,31 +6,42 @@ import { Send, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import CommanderAvatar from './CommanderAvatar';
-import type { ChatMessage, UserProfile, Planet, MCPDocument } from '@/types/orbit';
+import type { ChatMessage, UserProfile, KnowledgeNode, MCPDocument } from '@/types/orbit';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
   userProfile: UserProfile | null;
-  completedPlanets: Planet[];
+  completedNodes: KnowledgeNode[];
   documents: MCPDocument[];
+  selectedNode?: KnowledgeNode | null;
   onSendMessage: (msg: ChatMessage) => void;
-  projectName?: string; // eslint-disable-line @typescript-eslint/no-unused-vars
-  mode?: 'sidebar' | 'full'; // eslint-disable-line @typescript-eslint/no-unused-vars
+  projectName?: string;
+  mode?: 'sidebar' | 'full';
 }
 
-const SUGGESTED_PROMPTS = [
-  'Why was the auth approach built this way?',
-  'Who owns the data pipeline?',
-  'What should I avoid changing?',
+const DEFAULT_PROMPTS = [
+  'What should I avoid changing here?',
+  'Who owns this area of the project?',
   "What's the current sprint focus?",
   'Summarise what I still need to learn',
 ];
 
+function getNodePrompts(node: KnowledgeNode): string[] {
+  return [
+    `Can you explain ${node.title} in more detail?`,
+    `What should I avoid doing in this area?`,
+    `Who should I talk to about ${node.title}?`,
+    `What are the biggest risks here?`,
+    `Summarise what I need to know before touching this`,
+  ];
+}
+
 export default function ChatInterface({
   messages,
   userProfile,
-  completedPlanets,
+  completedNodes,
   documents,
+  selectedNode,
   onSendMessage,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
@@ -43,7 +54,7 @@ export default function ChatInterface({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingText]);
 
-  // Welcome message is the first message handled by parent
+  const suggestedPrompts = selectedNode ? getNodePrompts(selectedNode) : DEFAULT_PROMPTS;
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading || !userProfile) return;
@@ -67,8 +78,10 @@ export default function ChatInterface({
           message: text,
           chatHistory: messages.slice(-10),
           userProfile,
-          completedPlanets,
+          completedNodes,
+          completedPlanets: completedNodes, // legacy compat
           documents,
+          selectedNode: selectedNode ?? null,
         }),
       });
 
@@ -132,6 +145,20 @@ export default function ChatInterface({
     }
   }, [input]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mdComponents: Record<string, any> = {
+    p: ({ children }: { children?: React.ReactNode }) => <p style={{ marginBottom: '0.5em', lineHeight: 1.6 }}>{children}</p>,
+    strong: ({ children }: { children?: React.ReactNode }) => <strong style={{ color: 'var(--color-orbit-blue)', fontWeight: 700 }}>{children}</strong>,
+    ul: ({ children }: { children?: React.ReactNode }) => <ul style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'disc' }}>{children}</ul>,
+    ol: ({ children }: { children?: React.ReactNode }) => <ol style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'decimal' }}>{children}</ol>,
+    li: ({ children }: { children?: React.ReactNode }) => <li style={{ marginBottom: '0.25em', lineHeight: 1.5 }}>{children}</li>,
+    h1: ({ children }: { children?: React.ReactNode }) => <h1 style={{ fontSize: '1em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h1>,
+    h2: ({ children }: { children?: React.ReactNode }) => <h2 style={{ fontSize: '0.95em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h2>,
+    h3: ({ children }: { children?: React.ReactNode }) => <h3 style={{ fontSize: '0.9em', fontWeight: 700, marginBottom: '0.3em', color: 'var(--color-text-secondary)' }}>{children}</h3>,
+    code: ({ children }: { children?: React.ReactNode }) => <code style={{ background: 'rgba(0,170,255,0.1)', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em', fontFamily: 'monospace' }}>{children}</code>,
+    hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(0,170,255,0.15)', margin: '0.6em 0' }} />,
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -145,7 +172,13 @@ export default function ChatInterface({
             MISSION CONTROL
           </div>
           <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-            CDR NOVA · Your project guide
+            {selectedNode ? (
+              <span style={{ color: 'var(--color-orbit-blue)' }}>
+                Viewing: {selectedNode.title}
+              </span>
+            ) : (
+              'Your project guide'
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -169,35 +202,14 @@ export default function ChatInterface({
               <div
                 className="px-4 py-3 text-sm leading-relaxed"
                 style={{
-                  background: msg.role === 'user'
-                    ? 'var(--color-orbit-blue)'
-                    : 'var(--color-nebula)',
-                  border: msg.role === 'assistant'
-                    ? '1px solid rgba(0,170,255,0.15)'
-                    : 'none',
+                  background: msg.role === 'user' ? 'var(--color-orbit-blue)' : 'var(--color-nebula)',
+                  border: msg.role === 'assistant' ? '1px solid rgba(0,170,255,0.15)' : 'none',
                   color: 'var(--color-text-primary)',
-                  borderRadius: msg.role === 'user'
-                    ? '18px 18px 4px 18px'
-                    : '18px 18px 18px 4px',
+                  borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                 }}
               >
                 {msg.role === 'assistant' ? (
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p style={{ marginBottom: '0.5em', lineHeight: 1.6 }}>{children}</p>,
-                      strong: ({ children }) => <strong style={{ color: 'var(--color-orbit-blue)', fontWeight: 700 }}>{children}</strong>,
-                      ul: ({ children }) => <ul style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'disc' }}>{children}</ul>,
-                      ol: ({ children }) => <ol style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'decimal' }}>{children}</ol>,
-                      li: ({ children }) => <li style={{ marginBottom: '0.25em', lineHeight: 1.5 }}>{children}</li>,
-                      h1: ({ children }) => <h1 style={{ fontSize: '1em', fontWeight: 700, marginBottom: '0.4em', color: 'var(--color-text-primary)' }}>{children}</h1>,
-                      h2: ({ children }) => <h2 style={{ fontSize: '0.95em', fontWeight: 700, marginBottom: '0.4em', color: 'var(--color-text-primary)' }}>{children}</h2>,
-                      h3: ({ children }) => <h3 style={{ fontSize: '0.9em', fontWeight: 700, marginBottom: '0.3em', color: 'var(--color-text-secondary)' }}>{children}</h3>,
-                      code: ({ children }) => <code style={{ background: 'rgba(0,170,255,0.1)', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em', fontFamily: 'monospace' }}>{children}</code>,
-                      hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(0,170,255,0.15)', margin: '0.6em 0' }} />,
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  <ReactMarkdown components={mdComponents}>{msg.content}</ReactMarkdown>
                 ) : (
                   msg.content
                 )}
@@ -208,11 +220,7 @@ export default function ChatInterface({
                     <span
                       key={doc}
                       className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-                      style={{
-                        background: 'rgba(0,170,255,0.08)',
-                        border: '1px solid rgba(0,170,255,0.2)',
-                        color: 'var(--color-text-secondary)',
-                      }}
+                      style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
                     >
                       <FileText size={10} />
                       {doc}
@@ -227,32 +235,15 @@ export default function ChatInterface({
           </div>
         ))}
 
-        {/* Streaming assistant message */}
+        {/* Streaming */}
         {isLoading && streamingText && (
           <div className="flex gap-2">
-            <div className="flex-shrink-0 mt-1">
-              <CommanderAvatar size="sm" />
-            </div>
+            <div className="flex-shrink-0 mt-1"><CommanderAvatar size="sm" /></div>
             <div
               className="px-4 py-3 text-sm max-w-[85%] leading-relaxed"
-              style={{
-                background: 'var(--color-nebula)',
-                border: '1px solid rgba(0,170,255,0.15)',
-                color: 'var(--color-text-primary)',
-                borderRadius: '18px 18px 18px 4px',
-              }}
+              style={{ background: 'var(--color-nebula)', border: '1px solid rgba(0,170,255,0.15)', color: 'var(--color-text-primary)', borderRadius: '18px 18px 18px 4px' }}
             >
-              <ReactMarkdown
-                components={{
-                  p: ({ children }) => <p style={{ marginBottom: '0.5em', lineHeight: 1.6 }}>{children}</p>,
-                  strong: ({ children }) => <strong style={{ color: 'var(--color-orbit-blue)', fontWeight: 700 }}>{children}</strong>,
-                  ul: ({ children }) => <ul style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'disc' }}>{children}</ul>,
-                  li: ({ children }) => <li style={{ marginBottom: '0.25em' }}>{children}</li>,
-                  code: ({ children }) => <code style={{ background: 'rgba(0,170,255,0.1)', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em', fontFamily: 'monospace' }}>{children}</code>,
-                }}
-              >
-                {streamingText}
-              </ReactMarkdown>
+              <ReactMarkdown components={mdComponents}>{streamingText}</ReactMarkdown>
               <span className="typewriter-cursor" />
             </div>
           </div>
@@ -262,10 +253,7 @@ export default function ChatInterface({
         {isLoading && !streamingText && (
           <div className="flex gap-2 items-center">
             <CommanderAvatar size="sm" />
-            <div
-              className="flex gap-1 px-4 py-3 rounded-2xl"
-              style={{ background: 'var(--color-nebula)', border: '1px solid rgba(0,170,255,0.15)' }}
-            >
+            <div className="flex gap-1 px-4 py-3 rounded-2xl" style={{ background: 'var(--color-nebula)', border: '1px solid rgba(0,170,255,0.15)' }}>
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
@@ -284,21 +272,24 @@ export default function ChatInterface({
 
       {/* Suggested prompts */}
       {input.length === 0 && messages.length < 3 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-          {SUGGESTED_PROMPTS.slice(0, 3).map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => sendMessage(prompt)}
-              className="text-xs px-3 py-1.5 rounded-full transition-all"
-              style={{
-                background: 'rgba(0,170,255,0.08)',
-                border: '1px solid rgba(0,170,255,0.2)',
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              {prompt}
-            </button>
-          ))}
+        <div className="px-4 pb-2 flex flex-col gap-1.5">
+          {selectedNode && (
+            <p className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '10px', marginBottom: 2 }}>
+              ASK ABOUT: {selectedNode.title.toUpperCase()}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-1.5">
+            {suggestedPrompts.slice(0, 3).map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => sendMessage(prompt)}
+                className="text-xs px-3 py-1.5 rounded-full transition-all text-left"
+                style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -312,7 +303,7 @@ export default function ChatInterface({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Commander Nova anything..."
+          placeholder="Ask Mission Control anything..."
           rows={1}
           disabled={isLoading}
           className="flex-1 px-4 py-2.5 rounded-xl text-sm resize-none outline-none"

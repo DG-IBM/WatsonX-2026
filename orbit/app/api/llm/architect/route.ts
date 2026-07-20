@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callLLM } from '@/lib/anthropic';
 import { buildArchitectPrompt, ARCHITECT_SYSTEM } from '@/lib/prompts';
-import { validateAndNormalisePlanetConfig } from '@/lib/planetConfig';
-import type { MCPDocument, Planet, UserProfile } from '@/types/orbit';
+import type { MCPDocument, KnowledgeNode, UserProfile, OnboardingBriefingCard } from '@/types/orbit';
 import { v4 as uuidv4 } from 'uuid';
 
 const MCP_URL     = process.env.NEXT_PUBLIC_MCP_URL ?? '';
@@ -34,12 +33,12 @@ async function queryContextStudio(query: string): Promise<string> {
             AgentPersona: 'OnboardingArchitect',
             query,
             sources: ['graph', 'vector'],
-            vector_params: { top_k: 10 },
-            graph_params: { max_depth: 1, limit: 5 },
+            vector_params: { top_k: 8 },
+            graph_params: { max_depth: 1, limit: 4 },
           },
         },
       }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!res.ok) return '';
@@ -66,16 +65,13 @@ async function queryContextStudio(query: string): Promise<string> {
   }
 }
 
-/** Fetch comprehensive project knowledge from Context Studio for a given role */
+/** Fetch project knowledge — 4 broad queries run in parallel */
 async function fetchDocumentsFromContextStudio(roleDescription: string): Promise<MCPDocument[]> {
   const queries = [
-    `project overview purpose vision goals`,
-    `architecture technical stack infrastructure`,
-    `team structure roles responsibilities contacts`,
-    `${roleDescription} workflows processes`,
-    `risks known issues technical debt`,
-    `deployment pipelines CI/CD testing`,
-    `codebase conventions standards patterns`,
+    'project overview purpose goals architecture',
+    'team structure roles responsibilities contacts',
+    `${roleDescription.slice(0, 120)} workflows processes`,
+    'risks technical debt deployment testing',
   ];
 
   const results = await Promise.allSettled(queries.map(q => queryContextStudio(q)));
@@ -102,13 +98,45 @@ async function fetchDocumentsFromContextStudio(roleDescription: string): Promise
   return documents;
 }
 
+const DEFAULT_COLORS = [
+  '#4a9eff', '#9b59b6', '#00b894', '#f4a460',
+  '#cc3300', '#1a6b8a', '#ffb400', '#e74c3c',
+  '#27ae60', '#6c5ce7',
+];
+const DEFAULT_EMISSIVE = [
+  '#2255aa', '#6c3483', '#007a5e', '#b8620a',
+  '#8b0000', '#0e3d50', '#a07800', '#8b0000',
+  '#1a7a3c', '#4834a8',
+];
+
+function makeVisualConfig(idx: number, total: number, color?: string, emissiveColor?: string): KnowledgeNode['visualConfig'] {
+  return {
+    size: 1.0,
+    color: color ?? DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+    emissiveColor: emissiveColor ?? DEFAULT_EMISSIVE[idx % DEFAULT_EMISSIVE.length],
+    orbitRadius: 4 + (idx / Math.max(total - 1, 1)) * 10,
+    orbitSpeed: 0.008 - (idx / Math.max(total - 1, 1)) * 0.005,
+  };
+}
+
+/** Strip markdown code fences from LLM output */
+const stripFences = (s: string) =>
+  s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+
+// ── Skeleton node shape returned from Phase 1 ─────────────────────────────────
+interface SkeletonNode {
+  id?: string;
+  title: string;
+  description?: string;
+  order?: number;
+  color?: string;
+  emissiveColor?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       roleDescription: string;
-      mcpUrl: string;
-      mcpToken: string;
-      mcpApiKey?: string;
       documents?: MCPDocument[];
     };
 
@@ -118,56 +146,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'roleDescription is required' }, { status: 400 });
     }
 
-    // Use provided documents if already cached, otherwise fetch from Context Studio
+    // Fetch docs (parallel, fast)
     let documents: MCPDocument[] = providedDocs ?? [];
     if (documents.length === 0) {
       documents = await fetchDocumentsFromContextStudio(roleDescription);
     }
 
-    // Build and call LLM
+    // Phase 1 — skeleton only (~2,000 output tokens)
     const userPrompt = buildArchitectPrompt(roleDescription, documents);
-
     let rawResponse = await callLLM(ARCHITECT_SYSTEM, userPrompt, {
-      maxTokens: 8000,
-      temperature: 0.7,
+      maxTokens: 3000,
+      temperature: 0.6,
     });
 
-    // Strip markdown code fences if the model wrapped the JSON
-    const stripFences = (s: string) =>
-      s.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    let parsed: {
+      userProfile: UserProfile;
+      onboardingBriefingCard?: OnboardingBriefingCard;
+      nodes: SkeletonNode[];
+    };
 
-    // Parse JSON — retry once on failure
-    let parsed: { userProfile: UserProfile; planets: Planet[] };
     try {
       parsed = JSON.parse(stripFences(rawResponse));
     } catch {
-      const fixPrompt = `The following text contains JSON wrapped in markdown code fences or is malformed. Strip the fences and return only valid JSON, nothing else:\n\n${rawResponse}`;
+      // One repair attempt with a tiny prompt
+      const fixPrompt = `Fix this malformed JSON. Return only valid JSON, nothing else:\n\n${rawResponse.slice(0, 8000)}`;
       rawResponse = await callLLM(
-        'You extract and fix JSON. Strip any markdown code fences. Return only valid JSON, nothing else.',
+        'You fix malformed JSON. Return only the fixed JSON, nothing else.',
         fixPrompt,
-        { maxTokens: 8000 }
+        { maxTokens: 3500 }
       );
       parsed = JSON.parse(stripFences(rawResponse));
     }
 
-    // Validate and normalise visual configs
-    const totalPlanets = parsed.planets.length;
-    const normalisedPlanets: Planet[] = parsed.planets.map((planet, idx) => ({
-      ...planet,
-      id: planet.id || uuidv4(),
-      status: idx === 0 ? 'available' : (planet.status === 'completed' ? 'completed' : 'locked'),
-      visualConfig: validateAndNormalisePlanetConfig(
-        planet.visualConfig,
-        idx + 1,
-        totalPlanets
-      ),
-      debrief: null,
-      xpAwarded: 0,
+    const rawNodes: SkeletonNode[] = parsed.nodes ?? [];
+    const totalNodes = rawNodes.length;
+
+    // Build skeleton KnowledgeNodes — empty quiz/summary/etc., enriched later
+    const skeletonNodes: KnowledgeNode[] = rawNodes.map((node, idx) => ({
+      id: node.id || uuidv4(),
+      title: node.title,
+      summary: node.description ?? '',
+      keyTakeaways: [],
+      roleRelevance: '',
+      diagrams: [],
+      keyContacts: [],
+      links: [],
+      sources: [],
+      quiz: { questions: [] },
+      status: 'untouched' as const,
+      score: null,
+      order: node.order ?? idx + 1,
+      visualConfig: makeVisualConfig(idx, totalNodes, node.color, node.emissiveColor),
     }));
 
     return NextResponse.json({
-      planets: normalisedPlanets,
+      nodes: skeletonNodes,
+      planets: skeletonNodes,
       userProfile: parsed.userProfile,
+      onboardingBriefingCard: parsed.onboardingBriefingCard ?? null,
       documents,
     });
   } catch (err) {

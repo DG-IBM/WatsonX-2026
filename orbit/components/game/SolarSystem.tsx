@@ -5,18 +5,15 @@ import { OrbitControls } from '@react-three/drei';
 import Sun from './Sun';
 import PlanetMesh from './Planet';
 import StarField from './StarField';
-import AstronautAvatar from './AstronautAvatar';
-import type { Planet } from '@/types/orbit';
+import type { KnowledgeNode } from '@/types/orbit';
 
 interface SolarSystemProps {
-  planets: Planet[];
-  onPlanetHover: (planet: Planet | null) => void;
-  onPlanetClick: (planet: Planet) => void;
+  nodes: KnowledgeNode[];
+  onNodeHover: (node: KnowledgeNode | null) => void;
+  onNodeClick: (node: KnowledgeNode) => void;
 }
 
-export default function SolarSystem({ planets, onPlanetHover, onPlanetClick }: SolarSystemProps) {
-  const lastCompleted = [...planets].filter((p) => p.status === 'completed').sort((a, b) => b.order - a.order)[0] ?? null;
-
+export default function SolarSystem({ nodes, onNodeHover, onNodeClick }: SolarSystemProps) {
   return (
     <Canvas
       camera={{ position: [0, 18, 22], fov: 60 }}
@@ -44,37 +41,33 @@ export default function SolarSystem({ planets, onPlanetHover, onPlanetClick }: S
       <Sun />
 
       {/* Orbit path rings */}
-      {planets.map((planet) => {
-        const color =
-          planet.status === 'completed'
-            ? '#ffd700'
-            : planet.status === 'locked'
-            ? '#ffffff'
-            : '#00aaff';
-        const opacity =
-          planet.status === 'completed' ? 0.3 : planet.status === 'locked' ? 0.05 : 0.2;
+      {nodes.map((node) => {
+        const colour =
+          node.status === 'complete'
+            ? (node.score?.nodeColour === 'green' ? '#22c55e' : node.score?.nodeColour === 'red' ? '#ef4444' : '#f59e0b')
+            : node.status === 'reading'
+            ? '#00aaff'
+            : '#334455';
+        const opacity = node.status === 'complete' ? 0.3 : node.status === 'reading' ? 0.2 : 0.07;
 
         return (
-          <mesh key={`orbit-${planet.id}`} rotation-x={Math.PI / 2}>
-            <torusGeometry args={[planet.visualConfig.orbitRadius, 0.015, 2, 128]} />
-            <meshBasicMaterial color={color} transparent opacity={opacity} />
+          <mesh key={`orbit-${node.id}`} rotation-x={Math.PI / 2}>
+            <torusGeometry args={[node.visualConfig.orbitRadius, 0.015, 2, 128]} />
+            <meshBasicMaterial color={colour} transparent opacity={opacity} />
           </mesh>
         );
       })}
 
-      {/* Planets */}
-      {planets.map((planet, idx) => (
+      {/* Nodes */}
+      {nodes.map((node, idx) => (
         <PlanetMesh
-          key={planet.id}
-          planet={planet}
-          initialAngle={(idx / planets.length) * Math.PI * 2}
-          onHover={onPlanetHover}
-          onClick={onPlanetClick}
+          key={node.id}
+          planet={node}
+          initialAngle={(idx / nodes.length) * Math.PI * 2}
+          onHover={onNodeHover}
+          onClick={onNodeClick}
         />
       ))}
-
-      {/* Astronaut */}
-      <AstronautAvatar targetPlanet={lastCompleted} />
 
       {/* Stars */}
       <StarField />

@@ -274,6 +274,11 @@
 /* ── Print ──────────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
+  .print-only { display: block !important; }
   body { background: #fff; color: #000; }
   .glass-panel, .glass-panel-bright { background: #fff; border: 1px solid #ccc; }
+}
+
+@media screen {
+  .print-only { display: none !important; }
 }

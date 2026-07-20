@@ -40,9 +40,9 @@ export default function MissionBriefingCardView({
           }}
         >
           <div className="flex items-center gap-3">
-            <span className="text-gradient-orbit font-bold text-xl tracking-widest">ORBIT</span>
+            <span className="text-gradient-orbit font-bold text-xl tracking-widest">IBM BLUEBOOK</span>
             <span className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)' }}>
-              MISSION DOSSIER
+              KNOWLEDGE DOSSIER
             </span>
           </div>
           <div className="flex items-center gap-3">

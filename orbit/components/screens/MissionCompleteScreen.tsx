@@ -29,7 +29,7 @@ export default function MissionCompleteScreen() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [cinematicText, setCinematicText] = useState<'mapping' | 'complete' | null>('mapping');
 
-  const rank = astronautRank ?? 'Cadet';
+  const rank = astronautRank ?? 'Not Started';
 
   useEffect(() => {
     // Cinematic sequence
@@ -52,7 +52,7 @@ export default function MissionCompleteScreen() {
     if (!userProfile) return;
     setIsGenerating(true);
     try {
-      const completedPlanets = planets.filter((p) => p.status === 'completed');
+      const completedPlanets = planets.filter((p) => p.status === 'complete');
       const res = await fetch('/api/llm/briefing-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

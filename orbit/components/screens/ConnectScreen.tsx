@@ -71,10 +71,10 @@ export default function ConnectScreen() {
         }} />
       </div>
 
-      {/* ORBIT watermark */}
+      {/* IBM Bluebook watermark */}
       <div className="pointer-events-none fixed inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
-        <span style={{ fontSize: '22vw', fontWeight: 800, letterSpacing: '0.15em', color: 'rgba(0,170,255,0.018)', userSelect: 'none', fontFamily: "'Space Grotesk', sans-serif" }}>
-          ORBIT
+        <span style={{ fontSize: '13vw', fontWeight: 800, letterSpacing: '0.15em', color: 'rgba(0,170,255,0.018)', userSelect: 'none', fontFamily: "'Space Grotesk', sans-serif" }}>
+          BLUEBOOK
         </span>
       </div>
 
@@ -113,12 +113,15 @@ export default function ConnectScreen() {
             </div>
           </div>
 
-          <h1 className="text-gradient-orbit font-bold tracking-widest mb-2"
-            style={{ fontSize: 52, letterSpacing: '0.18em', lineHeight: 1, fontFamily: "'Space Grotesk', sans-serif" }}>
-            ORBIT
-          </h1>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-terminal text-xs tracking-widest" style={{ color: 'var(--color-text-muted)', fontSize: '10px', letterSpacing: '0.25em' }}>IBM</span>
+            <h1 className="text-gradient-orbit font-bold tracking-widest mb-1"
+              style={{ fontSize: 46, letterSpacing: '0.14em', lineHeight: 1, fontFamily: "'Space Grotesk', sans-serif" }}>
+              BLUEBOOK
+            </h1>
+          </div>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, letterSpacing: '0.04em' }}>
-            AI-Powered Project Onboarding
+            Knowledge Verification System
           </p>
           <div className="flex justify-center mt-2 gap-1">
             <span style={{ display: 'inline-block', width: 2, height: 2, borderRadius: '50%', background: 'var(--color-text-muted)' }} />
@@ -155,7 +158,7 @@ export default function ConnectScreen() {
             </div>
             <div className="flex-1 h-px" style={{ background: 'rgba(0,170,255,0.1)' }} />
             <span className="font-terminal" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--color-text-muted)' }}>
-              MISSION CONTROL
+              IBM BLUEBOOK
             </span>
             <div className="flex-1 h-px" style={{ background: 'rgba(0,170,255,0.1)' }} />
           </div>
@@ -368,7 +371,7 @@ export default function ConnectScreen() {
                       cursor: 'pointer',
                     }}
                   >
-                    LAUNCH MISSION
+                    START VERIFICATION
                     <ArrowRight size={14} />
                   </motion.button>
                 </motion.div>

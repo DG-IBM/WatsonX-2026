@@ -70,12 +70,15 @@ export async function POST(request: NextRequest) {
       chatHistory: ChatMessage[];
       userProfile: UserProfile;
       completedPlanets: Planet[];
+      completedNodes?: Planet[];
       documents: MCPDocument[];
       mcpUrl?: string;
       mcpToken?: string;
+      selectedNode?: Planet | null;
     };
 
-    const { message, chatHistory, userProfile, completedPlanets } = body;
+    const { message, chatHistory, userProfile, completedPlanets, completedNodes, selectedNode } = body;
+    const resolvedCompleted = completedNodes ?? completedPlanets ?? [];
 
     if (!message || !userProfile) {
       return NextResponse.json({ error: 'message and userProfile are required' }, { status: 400 });
@@ -90,30 +93,33 @@ export async function POST(request: NextRequest) {
       .map(m => `${m.role === 'user' ? 'User' : 'Nova'}: ${m.content}`)
       .join('\n');
 
-    // Build completed planets summary
-    const completedSummary = completedPlanets.length > 0
-      ? completedPlanets.map(p => `- ${p.name}: ${p.subtitle}`).join('\n')
+    // Build completed topics summary
+    const completedSummary = resolvedCompleted.length > 0
+      ? resolvedCompleted.map(p => `- ${(p as { title?: string; name?: string }).title ?? (p as { title?: string; name?: string }).name ?? 'Unknown'}`).join('\n')
       : 'None yet';
 
-    const userPrompt = `You are CDR Nova, an expert onboarding assistant for the Helios Smart Energy Grid platform at Lumina Energy.
-You have deep knowledge of the project and help new team members understand the codebase, team structure, architecture, and processes.
+    const nodeContextStr = selectedNode
+      ? `\nCURRENTLY VIEWING TOPIC: "${(selectedNode as { title?: string; name?: string }).title ?? (selectedNode as { title?: string; name?: string }).name}"\n`
+      : '';
+
+    const userPrompt = `You are Mission Control — an expert onboarding assistant with deep knowledge of this project. You help new team members understand the project's codebase, architecture, team structure, and processes.
 
 TEAM MEMBER:
 - Role: ${userProfile.parsedRole}
-- Experience level: ${userProfile.experienceLevel}
+- Experience: ${userProfile.experience ?? userProfile.experienceLevel ?? 'Not specified'}
 
-COMPLETED ONBOARDING TOPICS:
+COMPLETED KNOWLEDGE TOPICS:
 ${completedSummary}
-
-RELEVANT PROJECT KNOWLEDGE (retrieved from the Helios knowledge base):
+${nodeContextStr}
+RELEVANT PROJECT KNOWLEDGE:
 ${contextKnowledge || 'No specific context retrieved — answer from general knowledge about the project.'}
 
 CONVERSATION HISTORY:
 ${historyText}
 
-USER QUESTION: ${message}
+QUESTION: ${message}
 
-Answer directly and specifically using the retrieved knowledge above. Be concrete — name actual team members, services, files, and processes from the Helios codebase. If the knowledge base contains the answer, use it. Keep your response concise and helpful.`;
+Answer directly and specifically using the retrieved knowledge above. Be concrete — name actual team members, services, files, and processes. Keep your response concise and helpful. If the knowledge base contains the answer, use it.`;
 
     const stream = await callLLMStream(CHAT_SYSTEM, userPrompt, {
       maxTokens: 2048,

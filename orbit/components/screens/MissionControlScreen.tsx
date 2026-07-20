@@ -21,7 +21,7 @@ export default function MissionControlScreen() {
   } = useOrbitStore();
 
   const hasWelcomed = useRef(false);
-  const completedPlanets = planets.filter((p) => p.status === 'completed');
+  const completedPlanets = planets.filter((p) => p.status === 'complete');
 
   // Send welcome message on first open
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function MissionControlScreen() {
     const welcome: ChatMessage = {
       id: uuidv4(),
       role: 'assistant',
-      content: `Commander Nova here. You've been exploring ${projectName} — I've been watching your progress. I have full access to the project knowledge base and I know your role as ${userProfile.parsedRole}.\n\nAsk me anything. I'm here to fill gaps, explain decisions, and help you find your footing. What would you like to know?`,
+      content: `Mission Control here. You're verifying your knowledge of ${projectName} — I have full access to the project knowledge base and know your role as ${userProfile.parsedRole}.\n\nAsk me anything. I'm here to explain context, fill gaps, and help you understand this project thoroughly. What would you like to know?`,
       timestamp: new Date(),
     };
     addChatMessage(welcome);
@@ -55,9 +55,9 @@ export default function MissionControlScreen() {
           className="font-terminal text-xs transition-opacity opacity-50 hover:opacity-100"
           style={{ color: 'var(--color-text-secondary)' }}
         >
-          ← BACK TO ORBIT
+          ← BACK TO MAP
         </button>
-        <span className="text-gradient-orbit font-bold text-xl tracking-widest">ORBIT</span>
+        <span className="text-gradient-orbit font-bold text-xl tracking-widest">IBM BLUEBOOK</span>
         <div className="w-24" />
       </div>
 
@@ -68,7 +68,7 @@ export default function MissionControlScreen() {
             <ChatInterface
               messages={chatMessages}
               userProfile={userProfile}
-              completedPlanets={completedPlanets}
+              completedNodes={completedPlanets}
               documents={mcpDocuments}
               onSendMessage={addChatMessage}
               projectName={

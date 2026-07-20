@@ -5,13 +5,23 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { Group, Mesh } from 'three';
-import type { Planet } from '@/types/orbit';
+import type { KnowledgeNode } from '@/types/orbit';
 
 interface PlanetMeshProps {
-  planet: Planet;
+  planet: KnowledgeNode;
   initialAngle: number;
-  onHover: (planet: Planet | null) => void;
-  onClick: (planet: Planet) => void;
+  onHover: (planet: KnowledgeNode | null) => void;
+  onClick: (planet: KnowledgeNode) => void;
+}
+
+/** Derive the glow colour for a completed node based on its score */
+function getCompletedGlowColor(node: KnowledgeNode): string {
+  switch (node.score?.nodeColour) {
+    case 'green':  return '#22c55e';
+    case 'yellow': return '#f59e0b';
+    case 'red':    return '#ef4444';
+    default:       return '#ffd700';
+  }
 }
 
 export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: PlanetMeshProps) {
@@ -21,48 +31,49 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
   const angleRef = useRef(initialAngle);
   const { visualConfig, status } = planet;
 
-  // Build material based on status and texture type
+  // Build material based on status
   const material = useMemo(() => {
-    if (status === 'locked') {
+    if (status === 'untouched') {
       return new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#1a1a2e'),
-        emissive: new THREE.Color('#0a0a1a'),
-        emissiveIntensity: 0.1,
-        roughness: 0.9,
+        color: new THREE.Color(visualConfig.color),
+        emissive: new THREE.Color(visualConfig.emissiveColor),
+        emissiveIntensity: 0.08,
+        roughness: 0.85,
+        opacity: 0.6,
+        transparent: true,
       });
     }
 
-    const c = new THREE.Color(visualConfig.color);
-    const e = new THREE.Color(visualConfig.emissiveColor);
-
-    switch (visualConfig.textureType) {
-      case 'icy':
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.1, roughness: 0.2, metalness: 0.3 });
-      case 'lava':
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.6, roughness: 0.8 });
-      case 'gas':
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.2, roughness: 0.6, transparent: true, opacity: 0.92 });
-      case 'storm':
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.05, roughness: 0.95 });
-      case 'ocean':
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.2, roughness: 0.3, metalness: 0.2 });
-      default:
-        return new THREE.MeshStandardMaterial({ color: c, emissive: e, emissiveIntensity: 0.15, roughness: 0.8 });
+    if (status === 'reading') {
+      return new THREE.MeshStandardMaterial({
+        color: new THREE.Color(visualConfig.color),
+        emissive: new THREE.Color(visualConfig.emissiveColor),
+        emissiveIntensity: 0.35,
+        roughness: 0.6,
+      });
     }
-  }, [status, visualConfig]);
+
+    // complete
+    const glowColor = getCompletedGlowColor(planet);
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color(glowColor),
+      emissive: new THREE.Color(glowColor),
+      emissiveIntensity: 0.45,
+      roughness: 0.4,
+    });
+  }, [status, visualConfig, planet.score?.nodeColour]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Completed ring material
-  const completedRingMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#ffd700',
-        emissive: '#ffd700',
-        emissiveIntensity: 0.8,
-        transparent: true,
-        opacity: 0.7,
-      }),
-    []
-  );
+  const completedRingMat = useMemo(() => {
+    const glowColor = getCompletedGlowColor(planet);
+    return new THREE.MeshStandardMaterial({
+      color: glowColor,
+      emissive: glowColor,
+      emissiveIntensity: 0.9,
+      transparent: true,
+      opacity: 0.75,
+    });
+  }, [planet.score?.nodeColour]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame((_, delta) => {
     if (!groupRef.current || !meshRef.current) return;
@@ -80,29 +91,22 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
     const targetScale = hovered ? 1.15 : 1;
     meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
 
+    // Pulse for reading state
+    if (status === 'reading' && material instanceof THREE.MeshStandardMaterial) {
+      const pulse = 0.25 + Math.abs(Math.sin(Date.now() * 0.002)) * 0.25;
+      material.emissiveIntensity = pulse;
+    }
+
     // Hover emissive boost
-    if (material instanceof THREE.MeshStandardMaterial) {
-      const baseIntensity = status === 'locked' ? 0.1 : 0.15;
+    if (status !== 'reading' && material instanceof THREE.MeshStandardMaterial) {
+      const baseIntensity = status === 'untouched' ? 0.08 : 0.45;
       material.emissiveIntensity = THREE.MathUtils.lerp(
         material.emissiveIntensity,
-        hovered ? baseIntensity + 0.3 : baseIntensity,
+        hovered ? baseIntensity + 0.25 : baseIntensity,
         0.1
       );
     }
   });
-
-  const handleClick = () => {
-    if (status === 'locked') {
-      // Brief red flash
-      if (material instanceof THREE.MeshStandardMaterial) {
-        const orig = material.color.clone();
-        material.color.set('#440000');
-        setTimeout(() => material.color.copy(orig), 200);
-      }
-      return;
-    }
-    onClick(planet);
-  };
 
   return (
     <group ref={groupRef}>
@@ -112,82 +116,72 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
         material={material}
         onPointerOver={(e) => { e.stopPropagation(); setHovered(true); onHover(planet); }}
         onPointerOut={() => { setHovered(false); onHover(null); }}
-        onClick={(e) => { e.stopPropagation(); handleClick(); }}
+        onClick={(e) => { e.stopPropagation(); onClick(planet); }}
         castShadow
       >
         <sphereGeometry args={[visualConfig.size, 32, 32]} />
       </mesh>
 
-      {/* Gas atmosphere layer */}
-      {visualConfig.textureType === 'gas' && status !== 'locked' && (
-        <mesh scale={1.08}>
-          <sphereGeometry args={[visualConfig.size, 16, 16]} />
-          <meshStandardMaterial
-            color={new THREE.Color(visualConfig.atmosphereColor)}
-            transparent
-            opacity={0.12}
-            side={THREE.BackSide}
-          />
-        </mesh>
-      )}
-
-      {/* Rings */}
-      {visualConfig.hasRings && status !== 'locked' && (
-        <mesh rotation-x={Math.PI / 3}>
-          <torusGeometry args={[
-            visualConfig.size * 1.6,
-            visualConfig.size * 0.15,
-            2,
-            64,
-          ]} />
-          <meshStandardMaterial
-            color={new THREE.Color(visualConfig.secondaryColor)}
-            transparent
-            opacity={0.6}
-          />
-        </mesh>
-      )}
-
       {/* Completed glow ring */}
-      {status === 'completed' && (
+      {status === 'complete' && (
         <mesh rotation-x={Math.PI / 2}>
-          <torusGeometry args={[visualConfig.size * 1.4, 0.04, 2, 64]} />
+          <torusGeometry args={[visualConfig.size * 1.45, 0.045, 2, 64]} />
           <primitive object={completedRingMat} />
         </mesh>
       )}
 
-      {/* Lock icon for locked planets */}
-      {status === 'locked' && (
-        <Html center position={[0, visualConfig.size + 0.5, 0]} distanceFactor={8}>
-          <div
-            style={{
-              fontSize: '14px',
-              pointerEvents: 'none',
-              opacity: 0.7,
-            }}
-          >
-            🔒
-          </div>
-        </Html>
+      {/* Revisit warning ring for red/yellow nodes */}
+      {status === 'complete' && (planet.score?.nodeColour === 'red' || planet.score?.nodeColour === 'yellow') && (
+        <mesh rotation-x={Math.PI / 2}>
+          <torusGeometry args={[visualConfig.size * 1.75, 0.025, 2, 64]} />
+          <meshStandardMaterial
+            color={planet.score.nodeColour === 'red' ? '#ef4444' : '#f59e0b'}
+            emissive={planet.score.nodeColour === 'red' ? '#ef4444' : '#f59e0b'}
+            emissiveIntensity={0.5}
+            transparent
+            opacity={0.45}
+          />
+        </mesh>
       )}
 
       {/* Hover label */}
-      {hovered && status !== 'locked' && (
+      {hovered && (
         <Html center position={[0, -(visualConfig.size + 0.8), 0]} distanceFactor={8}>
           <div
             style={{
               fontFamily: "'Space Mono', monospace",
               fontSize: '9px',
-              color: status === 'completed' ? '#ffd700' : '#00aaff',
-              background: 'rgba(2,4,8,0.85)',
+              color: status === 'complete'
+                ? (planet.score?.nodeColour === 'green' ? '#22c55e' : planet.score?.nodeColour === 'red' ? '#ef4444' : '#f59e0b')
+                : status === 'reading'
+                ? '#00aaff'
+                : 'rgba(200,220,240,0.6)',
+              background: 'rgba(2,4,8,0.88)',
               padding: '2px 8px',
               borderRadius: '4px',
-              border: `1px solid ${status === 'completed' ? 'rgba(255,215,0,0.4)' : 'rgba(0,170,255,0.3)'}`,
+              border: '1px solid rgba(255,255,255,0.1)',
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
             }}
           >
-            {planet.name}
+            {planet.title}
+          </div>
+        </Html>
+      )}
+
+      {/* Untouched dim overlay label — always visible */}
+      {!hovered && status === 'untouched' && (
+        <Html center position={[0, -(visualConfig.size + 0.8), 0]} distanceFactor={8}>
+          <div
+            style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: '8px',
+              color: 'rgba(160,190,220,0.35)',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {planet.title}
           </div>
         </Html>
       )}
