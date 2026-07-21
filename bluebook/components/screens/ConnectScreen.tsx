@@ -13,9 +13,12 @@ export default function ConnectScreen() {
   const { mcpConnection, setMCPConnection, setCurrentScreen } = useBluebookStore();
   const [url, setUrl] = useState(mcpConnection.url);
   const [token, setToken] = useState(mcpConnection.token);
+  const [apiKey, setApiKey] = useState(mcpConnection.apiKey ?? '');
   const [showToken, setShowToken] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [urlFocused, setUrlFocused] = useState(false);
   const [tokenFocused, setTokenFocused] = useState(false);
+  const [apiKeyFocused, setApiKeyFocused] = useState(false);
 
   const status = mcpConnection.status;
   const isConnecting = status === 'connecting';
@@ -25,16 +28,14 @@ export default function ConnectScreen() {
 
   const handleConnect = async () => {
     if (!canConnect) return;
-    setMCPConnection({ url: url.trim(), token: token.trim(), status: 'connecting' });
+    const rawToken = token.trim().replace(/^Bearer\s+/i, '');
+    const rawApiKey = apiKey.trim();
+    setMCPConnection({ url: url.trim(), token: rawToken, apiKey: rawApiKey, status: 'connecting' });
     try {
-      // Context Studio needs both Bearer token (Authorization) and x-api-key
-      // The user pastes the MCP Gateway Token into the token field —
-      // the Context Studio Key is embedded in the token JWT itself (same value used as apiKey)
-      const rawToken = token.trim().replace(/^Bearer\s+/i, '');
       const res = await fetch('/api/mcp/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim(), token: rawToken, apiKey: rawToken }),
+        body: JSON.stringify({ url: url.trim(), token: rawToken, apiKey: rawApiKey }),
       });
       const data = await res.json();
       if (data.success) {
@@ -56,127 +57,126 @@ export default function ConnectScreen() {
     setMCPConnection({ status: 'idle' });
   };
 
-  return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: 'var(--color-void)' }}>
+  const inputStyle = (focused: boolean) => ({
+    borderRadius: 4,
+    border: focused
+      ? '2px solid var(--cds-border-interactive)'
+      : '1px solid var(--cds-border-subtle)',
+    transition: 'border-color 0.15s',
+    background: 'var(--cds-layer-01)',
+  });
 
-      {/* Stars background */}
+  return (
+    <div
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      style={{ background: 'var(--cds-background)' }}
+    >
       <ParticleBackground />
 
-      {/* Deep radial glow behind panel */}
-      <div className="pointer-events-none fixed inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
-        <div style={{
-          width: 700, height: 700, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0,100,200,0.06) 0%, transparent 70%)',
-        }} />
-      </div>
-
-      {/* IBM Bluebook watermark */}
-      <div className="pointer-events-none fixed inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
-        <span style={{ fontSize: '13vw', fontWeight: 800, letterSpacing: '0.15em', color: 'rgba(0,170,255,0.018)', userSelect: 'none', fontFamily: "'Space Grotesk', sans-serif" }}>
-          BLUEBOOK
-        </span>
-      </div>
+      {/* Subtle grid background */}
+      <div
+        className="pointer-events-none fixed inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(var(--cds-border-subtle) 1px, transparent 1px),
+            linear-gradient(90deg, var(--cds-border-subtle) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+          opacity: 0.2,
+          zIndex: 1,
+        }}
+      />
 
       {/* Main content */}
       <div className="relative w-full max-w-lg px-5" style={{ zIndex: 10 }}>
 
-        {/* ── Logo ── */}
+        {/* ── Header ── */}
         <motion.div
           initial={{ opacity: 0, y: -24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-10"
         >
-          {/* Icon */}
-          <div className="flex justify-center mb-5">
-            <div className="relative">
-              <div style={{
-                width: 72, height: 72, borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(0,100,200,0.3), rgba(0,170,255,0.15))',
-                border: '1px solid rgba(0,170,255,0.35)',
-                boxShadow: '0 0 32px rgba(0,170,255,0.2), inset 0 0 32px rgba(0,170,255,0.05)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-                  {/* orbit rings */}
-                  <ellipse cx="17" cy="17" rx="16" ry="6" stroke="#00aaff" strokeWidth="1.2" strokeOpacity="0.6"/>
-                  <ellipse cx="17" cy="17" rx="10" ry="16" stroke="#00ff88" strokeWidth="1.2" strokeOpacity="0.4" transform="rotate(60 17 17)"/>
-                  {/* center dot */}
-                  <circle cx="17" cy="17" r="3" fill="#ffd700" />
-                  {/* planet dot */}
-                  <circle cx="33" cy="17" r="2.5" fill="#00aaff" />
-                </svg>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full animate-pulse-glow"
-                style={{ background: 'var(--color-signal)', boxShadow: '0 0 8px var(--color-signal)' }} />
+          {/* IBM Logo mark */}
+          <div className="flex justify-center mb-6">
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                background: 'var(--ibm-blue-60)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 4,
+              }}
+            >
+              {/* IBM 8-bar logo simplified */}
+              <svg width="44" height="20" viewBox="0 0 44 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0"  y="0"  width="44" height="3" rx="1" fill="white" />
+                <rect x="0"  y="5"  width="44" height="3" rx="1" fill="white" />
+                <rect x="6"  y="10" width="32" height="3" rx="1" fill="white" />
+                <rect x="6"  y="15" width="32" height="3" rx="1" fill="white" />
+              </svg>
             </div>
           </div>
 
           <div className="flex flex-col items-center gap-1">
-            <span className="font-terminal text-xs tracking-widest" style={{ color: 'var(--color-text-muted)', fontSize: '10px', letterSpacing: '0.25em' }}>IBM</span>
-            <h1 className="text-gradient-orbit font-bold tracking-widest mb-1"
-              style={{ fontSize: 46, letterSpacing: '0.14em', lineHeight: 1, fontFamily: "'Space Grotesk', sans-serif" }}>
+            <span
+              className="font-terminal text-xs tracking-widest"
+              style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px', letterSpacing: '0.25em' }}
+            >
+              IBM
+            </span>
+            <h1
+              className="font-bold tracking-widest"
+              style={{ fontSize: 42, letterSpacing: '0.12em', lineHeight: 1, color: 'var(--ibm-blue-40)' }}
+            >
               BLUEBOOK
             </h1>
           </div>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, letterSpacing: '0.04em' }}>
+          <p style={{ color: 'var(--cds-text-secondary)', fontSize: 14, marginTop: 8 }}>
             Knowledge Verification System
           </p>
-          <div className="flex justify-center mt-2 gap-1">
-            <span style={{ display: 'inline-block', width: 2, height: 2, borderRadius: '50%', background: 'var(--color-text-muted)' }} />
-            <span style={{ display: 'inline-block', width: 2, height: 2, borderRadius: '50%', background: 'var(--color-text-muted)' }} />
-            <span style={{ display: 'inline-block', width: 2, height: 2, borderRadius: '50%', background: 'var(--color-text-muted)' }} />
-          </div>
         </motion.div>
 
         {/* ── Panel ── */}
         <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
           className="glass-panel-bright"
           style={{
             padding: '28px 32px 32px',
             border: isConnected
-              ? '1px solid rgba(0,255,136,0.35)'
+              ? '1px solid rgba(66,190,101,0.4)'
               : isFailed
-              ? '1px solid rgba(255,68,68,0.25)'
-              : '1px solid rgba(0,170,255,0.28)',
-            boxShadow: isConnected
-              ? '0 0 40px rgba(0,255,136,0.08), 0 24px 48px rgba(0,0,0,0.5)'
-              : '0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,170,255,0.04)',
-            transition: 'border-color 0.4s, box-shadow 0.4s',
+              ? '1px solid rgba(250,77,86,0.3)'
+              : '1px solid var(--cds-border-subtle)',
+            transition: 'border-color 0.3s',
           }}
         >
           {/* Panel header */}
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ff5f56' }} />
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#ffbd2e' }} />
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#27c93f' }} />
-            </div>
-            <div className="flex-1 h-px" style={{ background: 'rgba(0,170,255,0.1)' }} />
-            <span className="font-terminal" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--color-text-muted)' }}>
-              IBM BLUEBOOK
+            <span
+              className="font-terminal"
+              style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--cds-text-placeholder)' }}
+            >
+              IBM BLUEBOOK — CONNECT
             </span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(0,170,255,0.1)' }} />
+            <div className="flex-1 h-px" style={{ background: 'var(--cds-border-subtle)' }} />
           </div>
 
           <div className="flex flex-col gap-5">
             {/* URL Input */}
             <div className="flex flex-col gap-2">
-              <label className="font-terminal" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--color-text-terminal)' }}>
+              <label
+                className="font-terminal"
+                style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--cds-text-secondary)' }}
+              >
                 MCP SERVER ENDPOINT
               </label>
-              <div className="relative" style={{
-                borderRadius: 10,
-                border: urlFocused ? '1px solid rgba(0,170,255,0.6)' : '1px solid rgba(0,170,255,0.18)',
-                boxShadow: urlFocused ? '0 0 0 3px rgba(0,170,255,0.08)' : 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                background: 'rgba(6,13,26,0.8)',
-              }}>
-                <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(0,170,255,0.4)' }}>
+              <div className="relative" style={inputStyle(urlFocused)}>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--cds-icon-secondary)' }}>
                   <Wifi size={14} />
                 </div>
                 <input
@@ -191,8 +191,7 @@ export default function ConnectScreen() {
                   style={{
                     padding: '12px 14px 12px 38px',
                     fontSize: 12,
-                    color: 'var(--color-text-terminal)',
-                    letterSpacing: '0.02em',
+                    color: 'var(--cds-text-primary)',
                   }}
                 />
               </div>
@@ -200,17 +199,14 @@ export default function ConnectScreen() {
 
             {/* Token Input */}
             <div className="flex flex-col gap-2">
-              <label className="font-terminal" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--color-text-terminal)' }}>
+              <label
+                className="font-terminal"
+                style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--cds-text-secondary)' }}
+              >
                 AUTHENTICATION TOKEN
               </label>
-              <div className="relative" style={{
-                borderRadius: 10,
-                border: tokenFocused ? '1px solid rgba(0,170,255,0.6)' : '1px solid rgba(0,170,255,0.18)',
-                boxShadow: tokenFocused ? '0 0 0 3px rgba(0,170,255,0.08)' : 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                background: 'rgba(6,13,26,0.8)',
-              }}>
-                <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(0,170,255,0.4)' }}>
+              <div className="relative" style={inputStyle(tokenFocused)}>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--cds-icon-secondary)' }}>
                   <Database size={14} />
                 </div>
                 <input
@@ -225,18 +221,57 @@ export default function ConnectScreen() {
                   style={{
                     padding: '12px 44px 12px 38px',
                     fontSize: 12,
-                    color: 'var(--color-text-terminal)',
-                    letterSpacing: '0.02em',
+                    color: 'var(--cds-text-primary)',
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowToken(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded transition-opacity"
-                  style={{ color: 'rgba(0,170,255,0.45)', opacity: 0.7 }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-opacity"
+                  style={{ color: 'var(--cds-icon-secondary)', opacity: 0.7 }}
                   tabIndex={-1}
                 >
                   {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Context Studio API Key */}
+            <div className="flex flex-col gap-2">
+              <label
+                className="font-terminal"
+                style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--cds-text-secondary)' }}
+              >
+                CONTEXT STUDIO API KEY
+                <span style={{ color: 'var(--cds-text-placeholder)', fontWeight: 400, marginLeft: 6 }}>(optional — enables live knowledge search)</span>
+              </label>
+              <div className="relative" style={inputStyle(apiKeyFocused)}>
+                <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--cds-icon-secondary)' }}>
+                  <Database size={14} />
+                </div>
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  onFocus={() => setApiKeyFocused(true)}
+                  onBlur={() => setApiKeyFocused(false)}
+                  placeholder="eyJ... (Context Studio API key)"
+                  disabled={isConnected}
+                  className="w-full font-terminal bg-transparent outline-none pr-12"
+                  style={{
+                    padding: '12px 44px 12px 38px',
+                    fontSize: 12,
+                    color: 'var(--cds-text-primary)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-opacity"
+                  style={{ color: 'var(--cds-icon-secondary)', opacity: 0.7 }}
+                  tabIndex={-1}
+                >
+                  {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
@@ -251,36 +286,31 @@ export default function ConnectScreen() {
                   exit={{ opacity: 0 }}
                   onClick={handleConnect}
                   disabled={!canConnect}
-                  whileHover={canConnect ? { scale: 1.015 } : {}}
-                  whileTap={canConnect ? { scale: 0.985 } : {}}
-                  className="w-full flex items-center justify-center gap-2.5 font-terminal relative overflow-hidden"
+                  className="w-full flex items-center justify-center gap-2.5 font-terminal"
                   style={{
                     padding: '13px 20px',
-                    borderRadius: 10,
-                    fontSize: 12,
-                    letterSpacing: '0.14em',
-                    fontWeight: 700,
+                    borderRadius: 4,
+                    fontSize: 14,
+                    letterSpacing: '0.08em',
+                    fontWeight: 600,
                     cursor: canConnect ? 'pointer' : 'not-allowed',
-                    background: canConnect
-                      ? 'linear-gradient(135deg, #0077cc 0%, #004d99 100%)'
-                      : 'rgba(0,100,180,0.1)',
+                    background: canConnect ? 'var(--ibm-blue-60)' : 'var(--cds-layer-03)',
                     border: canConnect
-                      ? '1px solid rgba(0,150,255,0.4)'
-                      : '1px solid rgba(0,100,180,0.15)',
-                    color: canConnect ? '#ffffff' : 'rgba(255,255,255,0.2)',
-                    boxShadow: canConnect ? '0 4px 20px rgba(0,100,200,0.3), inset 0 1px 0 rgba(255,255,255,0.08)' : 'none',
-                    transition: 'all 0.2s',
+                      ? '1px solid var(--cds-border-interactive)'
+                      : '1px solid var(--cds-border-subtle)',
+                    color: canConnect ? '#ffffff' : 'var(--cds-text-disabled)',
+                    transition: 'all 0.15s',
                   }}
                 >
                   {isConnecting ? (
                     <>
                       <Loader2 size={14} className="animate-spin" />
-                      ESTABLISHING LINK...
+                      CONNECTING...
                     </>
                   ) : (
                     <>
                       <Wifi size={14} />
-                      INITIATE CONNECTION
+                      CONNECT TO MCP SERVER
                     </>
                   )}
                 </motion.button>
@@ -301,16 +331,18 @@ export default function ConnectScreen() {
                 >
                   <div className="flex items-center gap-3 py-1">
                     <div className="flex gap-1">
-                      {[0,1,2].map(i => (
-                        <motion.div key={i} className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: 'var(--color-orbit-blue)' }}
+                      {[0, 1, 2].map(i => (
+                        <motion.div
+                          key={i}
+                          className="w-1.5 h-1.5"
+                          style={{ background: 'var(--ibm-blue-40)', borderRadius: 1 }}
                           animate={{ opacity: [0.3, 1, 0.3] }}
                           transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }}
                         />
                       ))}
                     </div>
-                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--color-orbit-blue)' }}>
-                      Establishing secure link...
+                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--ibm-blue-40)' }}>
+                      Establishing secure connection...
                     </span>
                   </div>
                 </motion.div>
@@ -325,10 +357,16 @@ export default function ConnectScreen() {
                   className="flex flex-col gap-4"
                 >
                   {/* Success badge */}
-                  <div className="flex items-center gap-2.5 py-2 px-3 rounded-lg"
-                    style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.18)' }}>
-                    <CheckCircle size={16} style={{ color: 'var(--color-signal)', flexShrink: 0 }} />
-                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--color-signal)', letterSpacing: '0.14em' }}>
+                  <div
+                    className="flex items-center gap-2.5 py-2 px-3"
+                    style={{
+                      background: 'var(--cds-support-success-bg)',
+                      border: '1px solid rgba(66,190,101,0.3)',
+                      borderRadius: 4,
+                    }}
+                  >
+                    <CheckCircle size={16} style={{ color: 'var(--cds-support-success)', flexShrink: 0 }} />
+                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--cds-support-success)', letterSpacing: '0.1em' }}>
                       CONNECTION ESTABLISHED
                     </span>
                   </div>
@@ -337,41 +375,49 @@ export default function ConnectScreen() {
                   {mcpConnection.sources.length > 0 && (
                     <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(mcpConnection.sources.length, 3)}, 1fr)` }}>
                       {mcpConnection.sources.map((src: MCPSource) => (
-                        <div key={src.name} className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl"
-                          style={{ background: 'rgba(0,255,136,0.04)', border: '1px solid rgba(0,255,136,0.12)' }}>
-                          <Database size={13} style={{ color: 'var(--color-signal)', opacity: 0.7 }} />
-                          <span className="font-terminal" style={{ fontSize: 10, color: 'var(--color-text-primary)', letterSpacing: '0.1em' }}>{src.name}</span>
-                          <span className="font-terminal" style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>{src.count} docs</span>
+                        <div
+                          key={src.name}
+                          className="flex flex-col items-center gap-1 py-3 px-2"
+                          style={{
+                            background: 'var(--cds-support-success-bg)',
+                            border: '1px solid rgba(66,190,101,0.2)',
+                            borderRadius: 4,
+                          }}
+                        >
+                          <Database size={13} style={{ color: 'var(--cds-support-success)', opacity: 0.8 }} />
+                          <span className="font-terminal" style={{ fontSize: 10, color: 'var(--cds-text-primary)', letterSpacing: '0.08em' }}>{src.name}</span>
+                          <span className="font-terminal" style={{ fontSize: 9, color: 'var(--cds-text-placeholder)' }}>{src.count} docs</span>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <p className="font-terminal text-center"
-                    style={{ fontSize: 10, color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}>
+                  <p
+                    className="font-terminal text-center"
+                    style={{ fontSize: 10, color: 'var(--cds-text-placeholder)', letterSpacing: '0.08em' }}
+                  >
                     {mcpConnection.documentCount} document{mcpConnection.documentCount !== 1 ? 's' : ''} indexed and ready
                   </p>
 
                   {/* Launch button */}
                   <motion.button
                     onClick={handleLaunch}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                     className="w-full flex items-center justify-center gap-2.5 font-terminal"
                     style={{
                       padding: '13px 20px',
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      letterSpacing: '0.14em',
-                      background: 'linear-gradient(135deg, #00cc66 0%, #007744 100%)',
-                      border: '1px solid rgba(0,255,136,0.4)',
+                      borderRadius: 4,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      letterSpacing: '0.08em',
+                      background: 'var(--ibm-blue-60)',
+                      border: '1px solid var(--cds-border-interactive)',
                       color: '#fff',
-                      boxShadow: '0 4px 20px rgba(0,200,100,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
                       cursor: 'pointer',
                     }}
                   >
-                    START VERIFICATION
+                    BEGIN VERIFICATION
                     <ArrowRight size={14} />
                   </motion.button>
                 </motion.div>
@@ -385,24 +431,32 @@ export default function ConnectScreen() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col gap-3"
                 >
-                  <div className="flex items-center gap-2.5 py-2 px-3 rounded-lg"
-                    style={{ background: 'rgba(255,68,68,0.06)', border: '1px solid rgba(255,68,68,0.2)' }}>
-                    <XCircle size={16} style={{ color: 'var(--color-alert)', flexShrink: 0 }} />
-                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--color-alert)', letterSpacing: '0.12em' }}>
+                  <div
+                    className="flex items-center gap-2.5 py-2 px-3"
+                    style={{
+                      background: 'var(--cds-support-error-bg)',
+                      border: '1px solid rgba(250,77,86,0.3)',
+                      borderRadius: 4,
+                    }}
+                  >
+                    <XCircle size={16} style={{ color: 'var(--cds-support-error)', flexShrink: 0 }} />
+                    <span className="font-terminal" style={{ fontSize: 11, color: 'var(--cds-support-error)', letterSpacing: '0.1em' }}>
                       CONNECTION FAILED
                     </span>
                   </div>
-                  <p className="font-terminal" style={{ fontSize: 10, color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                  <p className="font-terminal" style={{ fontSize: 11, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                     Could not reach the MCP server. Check the URL and token, then retry.
                   </p>
                   <button
                     onClick={handleRetry}
-                    className="w-full font-terminal py-2.5 rounded-lg transition-all"
+                    className="w-full font-terminal py-2.5 transition-all"
                     style={{
-                      fontSize: 11, letterSpacing: '0.12em',
-                      border: '1px solid rgba(255,68,68,0.3)',
-                      color: 'var(--color-alert)',
-                      background: 'rgba(255,68,68,0.05)',
+                      fontSize: 12,
+                      letterSpacing: '0.1em',
+                      borderRadius: 4,
+                      border: '1px solid var(--cds-support-error)',
+                      color: 'var(--cds-support-error)',
+                      background: 'var(--cds-support-error-bg)',
                     }}
                   >
                     RETRY CONNECTION
@@ -417,15 +471,15 @@ export default function ConnectScreen() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.7 }}
           className="text-center mt-5"
-          style={{ fontSize: 12, color: 'var(--color-text-muted)' }}
+          style={{ fontSize: 12, color: 'var(--cds-text-placeholder)' }}
         >
           No MCP server?{' '}
           <button
             onClick={handleLaunch}
             className="underline transition-colors"
-            style={{ color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}
+            style={{ color: 'var(--cds-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}
           >
             Continue without one →
           </button>

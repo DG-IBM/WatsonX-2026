@@ -18,10 +18,10 @@ interface Props {
 const SECTION = {
   label: (icon: React.ReactNode, text: string) => (
     <div className="flex items-center gap-2 mb-2">
-      <span style={{ color: 'var(--color-orbit-blue)', flexShrink: 0 }}>{icon}</span>
+      <span style={{ color: 'var(--ibm-blue-40)', flexShrink: 0 }}>{icon}</span>
       <span
         className="font-terminal text-xs tracking-widest"
-        style={{ color: 'var(--color-orbit-blue)', fontSize: '10px', letterSpacing: '0.15em' }}
+        style={{ color: 'var(--ibm-blue-40)', fontSize: '10px', letterSpacing: '0.15em' }}
       >
         {text}
       </span>
@@ -38,12 +38,12 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
 
   const nodeStatusColour = (n: KnowledgeNode): string => {
     if (n.status === 'complete') {
-      return n.score?.nodeColour === 'green' ? '#22c55e'
-        : n.score?.nodeColour === 'red' ? '#ef4444'
-        : '#f59e0b';
+      return n.score?.nodeColour === 'green' ? 'var(--cds-support-success)'
+        : n.score?.nodeColour === 'red' ? 'var(--cds-support-error)'
+        : 'var(--cds-support-warning)';
     }
-    if (n.status === 'reading') return 'var(--color-orbit-blue)';
-    return 'rgba(255,255,255,0.18)';
+    if (n.status === 'reading') return 'var(--ibm-blue-40)';
+    return 'var(--cds-border-strong)';
   };
 
   // Shared scrollable content — rendered both in screen sidebar and print layout
@@ -54,13 +54,13 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
       <section>
         {SECTION.label(<User size={12} />, 'YOUR ROLE')}
         <div
-          className="rounded-xl p-3"
-          style={{ background: 'rgba(0,170,255,0.06)', border: '1px solid rgba(0,170,255,0.15)' }}
+          className="p-3"
+          style={{ background: 'var(--cds-support-info-bg)', border: '1px solid rgba(69,137,255,0.2)', borderRadius: 4 }}
         >
-          <div className="font-semibold text-sm mb-1" style={{ color: 'var(--color-text-primary)' }}>
+          <div className="font-semibold text-sm mb-1" style={{ color: 'var(--cds-text-primary)' }}>
             {userProfile.parsedRole}
           </div>
-          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.65 }}>
             {card.roleIntro}
           </p>
         </div>
@@ -69,7 +69,7 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
       {/* ── Project intro ─────────────────────────── */}
       <section>
         {SECTION.label(<Briefcase size={12} />, 'THE PROJECT')}
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.7 }}>
           {card.projectIntro}
         </p>
       </section>
@@ -83,11 +83,11 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
               <li key={i} className="flex items-start gap-2">
                 <span
                   className="font-terminal flex-shrink-0 mt-0.5"
-                  style={{ color: 'var(--color-signal)', fontSize: '9px' }}
+                  style={{ color: 'var(--cds-support-success)', fontSize: '9px' }}
                 >
                   ▸
                 </span>
-                <span className="text-xs" style={{ color: 'var(--color-text-primary)', lineHeight: 1.6 }}>
+                <span className="text-xs" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.6 }}>
                   {r}
                 </span>
               </li>
@@ -106,33 +106,35 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
               <button
                 key={i}
                 onClick={() => node && onNodeClick(node)}
-                className="flex items-center gap-2.5 text-left px-3 py-2 rounded-lg transition-all no-print"
+                className="flex items-center gap-2.5 text-left px-3 py-2 transition-all no-print"
                 style={{
-                  background: node ? 'rgba(0,170,255,0.05)' : 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(0,170,255,0.12)',
+                  background: node ? 'var(--cds-support-info-bg)' : 'var(--cds-layer-03)',
+                  border: '1px solid var(--cds-border-subtle)',
                   cursor: node ? 'pointer' : 'default',
+                  borderRadius: 4,
                 }}
               >
                 {/* Step number */}
                 <span
-                  className="font-terminal flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                  className="font-terminal flex-shrink-0 w-5 h-5 flex items-center justify-center"
                   style={{
-                    background: 'rgba(0,170,255,0.12)',
-                    color: 'var(--color-orbit-blue)',
+                    background: 'var(--cds-support-info-bg)',
+                    color: 'var(--ibm-blue-40)',
                     fontSize: '9px',
+                    borderRadius: 2,
                   }}
                 >
                   {i + 1}
                 </span>
                 {/* Title */}
-                <span className="text-xs flex-1 min-w-0" style={{ color: 'var(--color-text-primary)', lineHeight: 1.4 }}>
+                <span className="text-xs flex-1 min-w-0" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.4 }}>
                   {title}
                 </span>
                 {/* Status dot */}
                 {node && (
                   <span
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: nodeStatusColour(node) }}
+                    className="w-2 h-2 flex-shrink-0"
+                    style={{ background: nodeStatusColour(node), borderRadius: 2 }}
                   />
                 )}
               </button>
@@ -149,32 +151,32 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
             {card.keyContacts.map((c, i) => (
               <div
                 key={i}
-                className="rounded-xl p-3"
-                style={{ background: 'rgba(255,180,0,0.05)', border: '1px solid rgba(255,180,0,0.12)' }}
+                className="p-3"
+                style={{ background: 'var(--cds-support-warning-bg)', border: '1px solid rgba(241,194,27,0.2)', borderRadius: 4 }}
               >
                 <div className="flex items-start gap-2">
                   <div
-                    className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center font-terminal font-bold"
-                    style={{ background: 'rgba(255,180,0,0.15)', color: '#ffb400', fontSize: '9px', marginTop: 1 }}
+                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center font-terminal font-bold"
+                    style={{ background: 'rgba(241,194,27,0.2)', color: 'var(--cds-support-warning)', fontSize: '9px', marginTop: 1, borderRadius: 2 }}
                   >
                     {c.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-xs" style={{ color: 'var(--color-text-primary)' }}>
+                    <div className="font-semibold text-xs" style={{ color: 'var(--cds-text-primary)' }}>
                       {c.name}
                     </div>
-                    <div className="text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                    <div className="text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px' }}>
                       {c.role}
                     </div>
                     {c.contact && c.contact !== 'Ask your manager' && (
                       <div
                         className="font-terminal text-xs mt-0.5"
-                        style={{ color: 'var(--color-orbit-blue)', fontSize: '9px' }}
+                        style={{ color: 'var(--ibm-blue-40)', fontSize: '9px' }}
                       >
                         {c.contact}
                       </div>
                     )}
-                    <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
+                    <div className="text-xs mt-1" style={{ color: 'var(--cds-text-placeholder)', lineHeight: 1.55 }}>
                       {c.why}
                     </div>
                   </div>
@@ -194,11 +196,11 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
               <li key={i} className="flex items-start gap-2">
                 <span
                   className="font-terminal flex-shrink-0"
-                  style={{ color: 'var(--color-gold)', fontSize: '9px', marginTop: 2 }}
+                  style={{ color: 'var(--cds-support-warning)', fontSize: '9px', marginTop: 2 }}
                 >
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                <span className="text-xs" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                   {tip}
                 </span>
               </li>
@@ -214,8 +216,8 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
           <ul className="flex flex-col gap-1.5">
             {card.doNotBreak.map((item, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span style={{ color: '#ef4444', fontSize: '9px', marginTop: 2, flexShrink: 0 }}>⚠</span>
-                <span className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                <span style={{ color: 'var(--cds-support-error)', fontSize: '9px', marginTop: 2, flexShrink: 0 }}>⚠</span>
+                <span className="text-xs" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                   {item}
                 </span>
               </li>
@@ -240,13 +242,14 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             onClick={() => setCollapsed(false)}
-            className="no-print fixed left-0 top-1/2 z-30 flex flex-col items-center gap-1 py-4 px-2 rounded-r-xl"
+            className="no-print fixed left-0 top-1/2 z-30 flex flex-col items-center gap-1 py-4 px-2"
             style={{
-              background: 'rgba(10,22,40,0.95)',
-              border: '1px solid rgba(0,170,255,0.25)',
+              background: 'var(--cds-layer-02)',
+              border: '1px solid var(--cds-border-subtle)',
               borderLeft: 'none',
+              borderRadius: '0 4px 4px 0',
               transform: 'translateY(-50%)',
-              color: 'var(--color-orbit-blue)',
+              color: 'var(--ibm-blue-40)',
             }}
           >
             <ChevronRight size={14} />
@@ -257,7 +260,7 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
                 letterSpacing: '0.15em',
                 writingMode: 'vertical-rl',
                 textOrientation: 'mixed',
-                color: 'var(--color-text-secondary)',
+                color: 'var(--cds-text-secondary)',
               }}
             >
               BRIEFING
@@ -278,21 +281,20 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
             className="no-print fixed left-0 top-0 h-full z-30 flex flex-col"
             style={{
               width: 340,
-              background: 'rgba(6,13,26,0.97)',
-              borderRight: '1px solid rgba(0,170,255,0.22)',
-              backdropFilter: 'blur(20px)',
+              background: 'var(--cds-layer-02)',
+              borderRight: '1px solid var(--cds-border-subtle)',
             }}
           >
             {/* Header bar */}
             <div
               className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(0,170,255,0.12)' }}
+              style={{ borderBottom: '1px solid var(--cds-border-subtle)' }}
             >
               <div>
-                <div className="font-terminal text-xs font-bold" style={{ color: 'var(--color-orbit-blue)', fontSize: '11px', letterSpacing: '0.15em' }}>
+                <div className="font-terminal text-xs font-bold" style={{ color: 'var(--ibm-blue-40)', fontSize: '11px', letterSpacing: '0.12em' }}>
                   YOUR BLUEBOOK
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px' }}>
                   {card.projectName}
                 </div>
               </div>
@@ -300,15 +302,15 @@ export default function OnboardingBriefingCard({ card, userProfile, nodes, onNod
                 <button
                   onClick={handlePrint}
                   title="Print briefing"
-                  className="p-1.5 rounded-lg transition-opacity opacity-50 hover:opacity-100"
-                  style={{ color: 'var(--color-text-secondary)' }}
+                  className="p-1.5 transition-opacity opacity-50 hover:opacity-100"
+                  style={{ color: 'var(--cds-text-secondary)' }}
                 >
                   <Printer size={13} />
                 </button>
                 <button
                   onClick={() => setCollapsed(true)}
-                  className="p-1.5 rounded-lg transition-opacity opacity-50 hover:opacity-100"
-                  style={{ color: 'var(--color-text-secondary)' }}
+                  className="p-1.5 transition-opacity opacity-50 hover:opacity-100"
+                  style={{ color: 'var(--cds-text-secondary)' }}
                 >
                   <ChevronLeft size={14} />
                 </button>

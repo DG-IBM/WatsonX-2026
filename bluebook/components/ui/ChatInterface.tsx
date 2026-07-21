@@ -1,12 +1,93 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Send, FileText } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import CommanderAvatar from './CommanderAvatar';
 import type { ChatMessage, UserProfile, KnowledgeNode, MCPDocument } from '@/types/bluebook';
+import { useEffect } from 'react';
+
+/** Extract context_id from a Context Studio JWT (client-side, no verification needed) */
+function extractContextId(apiKey: string): string {
+  try {
+    const payload = apiKey.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded.contextId ?? decoded.context_id ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** Query Context Studio directly from the browser — avoids server-side network issues */
+async function clientQueryContextBroker(
+  question: string,
+  url: string,
+  token: string,
+  apiKey: string,
+): Promise<string> {
+  if (!url || !token || !apiKey) return '';
+  const contextId = extractContextId(apiKey);
+  if (!contextId) return '';
+
+  const rawToken = token.replace(/^Bearer\s+/i, '');
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+        Authorization: `Bearer ${rawToken}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/call',
+        params: {
+          name: 'context-broker-hybrid-query',
+          arguments: {
+            context_id: contextId,
+            AgentPersona: 'OnboardingAssistant',
+            query: question,
+            sources: ['vector'],
+            vector_params: { top_k: 8 },
+            'x-api-key': apiKey,
+          },
+        },
+      }),
+    });
+
+    if (!res.ok) return '';
+
+    const contentType = res.headers.get('content-type') ?? '';
+    let result: unknown;
+
+    if (contentType.includes('text/event-stream')) {
+      const text = await res.text();
+      const lines = text.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
+      if (!lines.length) return '';
+      result = JSON.parse(lines[lines.length - 1].slice('data: '.length));
+    } else {
+      result = await res.json();
+    }
+
+    const content = (result as { result?: { content?: Array<{ text?: string }> } })?.result?.content;
+    if (!Array.isArray(content)) return '';
+    const rawText = content.map((c: { text?: string }) => c.text ?? '').join('\n');
+
+    // Parse inner JSON payload
+    const inner = JSON.parse(rawText) as {
+      items?: { vector?: Array<{ content?: string; metadata?: { title?: string } }> };
+    };
+    return (inner.items?.vector ?? [])
+      .map(item => item.metadata?.title ? `[${item.metadata.title}]\n${item.content ?? ''}` : (item.content ?? ''))
+      .filter(Boolean)
+      .join('\n\n---\n\n');
+  } catch {
+    return '';
+  }
+}
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -17,6 +98,9 @@ interface ChatInterfaceProps {
   onSendMessage: (msg: ChatMessage) => void;
   projectName?: string;
   mode?: 'sidebar' | 'full';
+  mcpUrl?: string;
+  mcpToken?: string;
+  mcpApiKey?: string;
 }
 
 const DEFAULT_PROMPTS = [
@@ -43,6 +127,9 @@ export default function ChatInterface({
   documents,
   selectedNode,
   onSendMessage,
+  mcpUrl,
+  mcpToken,
+  mcpApiKey,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +158,9 @@ export default function ChatInterface({
     setStreamingText('');
 
     try {
+      // Query Context Studio from the browser (avoids server-side network restrictions)
+      const liveKnowledge = await clientQueryContextBroker(text, mcpUrl ?? '', mcpToken ?? '', mcpApiKey ?? '');
+
       const res = await fetch('/api/llm/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,9 +169,14 @@ export default function ChatInterface({
           chatHistory: messages.slice(-10),
           userProfile,
           completedNodes,
-          completedPlanets: completedNodes, // legacy compat
+          completedPlanets: completedNodes,
           documents,
           selectedNode: selectedNode ?? null,
+          liveKnowledge,
+          // still send credentials so server can retry if needed
+          mcpUrl:    mcpUrl    ?? '',
+          mcpToken:  mcpToken  ?? '',
+          mcpApiKey: mcpApiKey ?? '',
         }),
       });
 
@@ -101,7 +196,6 @@ export default function ChatInterface({
         }
       }
 
-      // Extract sources if present
       const sourcesMatch = fullText.match(/SOURCES:\s*(.+)$/m);
       const referencedDocuments = sourcesMatch
         ? sourcesMatch[1].split(',').map((s) => s.trim())
@@ -120,7 +214,7 @@ export default function ChatInterface({
       const errMsg: ChatMessage = {
         id: uuidv4(),
         role: 'assistant',
-        content: 'I lost signal for a moment. Please try again.',
+        content: 'Connection interrupted. Please try again.',
         timestamp: new Date(),
       };
       onSendMessage(errMsg);
@@ -137,7 +231,6 @@ export default function ChatInterface({
     }
   };
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -147,16 +240,16 @@ export default function ChatInterface({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mdComponents: Record<string, any> = {
-    p: ({ children }: { children?: React.ReactNode }) => <p style={{ marginBottom: '0.5em', lineHeight: 1.6 }}>{children}</p>,
-    strong: ({ children }: { children?: React.ReactNode }) => <strong style={{ color: 'var(--color-orbit-blue)', fontWeight: 700 }}>{children}</strong>,
-    ul: ({ children }: { children?: React.ReactNode }) => <ul style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'disc' }}>{children}</ul>,
-    ol: ({ children }: { children?: React.ReactNode }) => <ol style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'decimal' }}>{children}</ol>,
-    li: ({ children }: { children?: React.ReactNode }) => <li style={{ marginBottom: '0.25em', lineHeight: 1.5 }}>{children}</li>,
-    h1: ({ children }: { children?: React.ReactNode }) => <h1 style={{ fontSize: '1em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h1>,
-    h2: ({ children }: { children?: React.ReactNode }) => <h2 style={{ fontSize: '0.95em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h2>,
-    h3: ({ children }: { children?: React.ReactNode }) => <h3 style={{ fontSize: '0.9em', fontWeight: 700, marginBottom: '0.3em', color: 'var(--color-text-secondary)' }}>{children}</h3>,
-    code: ({ children }: { children?: React.ReactNode }) => <code style={{ background: 'rgba(0,170,255,0.1)', padding: '1px 5px', borderRadius: 3, fontSize: '0.85em', fontFamily: 'monospace' }}>{children}</code>,
-    hr: () => <hr style={{ border: 'none', borderTop: '1px solid rgba(0,170,255,0.15)', margin: '0.6em 0' }} />,
+    p:      ({ children }: { children?: React.ReactNode }) => <p style={{ marginBottom: '0.5em', lineHeight: 1.6 }}>{children}</p>,
+    strong: ({ children }: { children?: React.ReactNode }) => <strong style={{ color: 'var(--ibm-blue-40)', fontWeight: 700 }}>{children}</strong>,
+    ul:     ({ children }: { children?: React.ReactNode }) => <ul style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'disc' }}>{children}</ul>,
+    ol:     ({ children }: { children?: React.ReactNode }) => <ol style={{ paddingLeft: '1.2em', marginBottom: '0.5em', listStyleType: 'decimal' }}>{children}</ol>,
+    li:     ({ children }: { children?: React.ReactNode }) => <li style={{ marginBottom: '0.25em', lineHeight: 1.5 }}>{children}</li>,
+    h1:     ({ children }: { children?: React.ReactNode }) => <h1 style={{ fontSize: '1em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h1>,
+    h2:     ({ children }: { children?: React.ReactNode }) => <h2 style={{ fontSize: '0.95em', fontWeight: 700, marginBottom: '0.4em' }}>{children}</h2>,
+    h3:     ({ children }: { children?: React.ReactNode }) => <h3 style={{ fontSize: '0.9em', fontWeight: 700, marginBottom: '0.3em', color: 'var(--cds-text-secondary)' }}>{children}</h3>,
+    code:   ({ children }: { children?: React.ReactNode }) => <code style={{ background: 'var(--cds-support-info-bg)', padding: '1px 5px', borderRadius: 2, fontSize: '0.85em', fontFamily: 'IBM Plex Mono, monospace' }}>{children}</code>,
+    hr:     () => <hr style={{ border: 'none', borderTop: '1px solid var(--cds-border-subtle)', margin: '0.6em 0' }} />,
   };
 
   return (
@@ -164,16 +257,16 @@ export default function ChatInterface({
       {/* Header */}
       <div
         className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ borderBottom: '1px solid rgba(0,170,255,0.15)' }}
+        style={{ borderBottom: '1px solid var(--cds-border-subtle)' }}
       >
         <CommanderAvatar size="md" />
         <div className="flex-1 min-w-0">
-          <div className="font-terminal text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            MISSION CONTROL
+          <div className="font-terminal text-sm font-bold" style={{ color: 'var(--cds-text-primary)' }}>
+            KNOWLEDGE ASSISTANT
           </div>
-          <div className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          <div className="text-xs" style={{ color: 'var(--cds-text-secondary)' }}>
             {selectedNode ? (
-              <span style={{ color: 'var(--color-orbit-blue)' }}>
+              <span style={{ color: 'var(--ibm-blue-40)' }}>
                 Viewing: {selectedNode.title}
               </span>
             ) : (
@@ -182,9 +275,9 @@ export default function ChatInterface({
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full animate-pulse-glow" style={{ background: 'var(--color-signal)' }} />
-          <span className="font-terminal text-xs" style={{ color: 'var(--color-signal)' }}>
-            CONNECTED
+          <div className="w-2 h-2 animate-pulse-glow" style={{ background: 'var(--cds-support-success)', borderRadius: 1 }} />
+          <span className="font-terminal text-xs" style={{ color: 'var(--cds-support-success)' }}>
+            ACTIVE
           </span>
         </div>
       </div>
@@ -202,10 +295,10 @@ export default function ChatInterface({
               <div
                 className="px-4 py-3 text-sm leading-relaxed"
                 style={{
-                  background: msg.role === 'user' ? 'var(--color-orbit-blue)' : 'var(--color-nebula)',
-                  border: msg.role === 'assistant' ? '1px solid rgba(0,170,255,0.15)' : 'none',
-                  color: 'var(--color-text-primary)',
-                  borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  background: msg.role === 'user' ? 'var(--ibm-blue-60)' : 'var(--cds-layer-03)',
+                  border: msg.role === 'assistant' ? '1px solid var(--cds-border-subtle)' : 'none',
+                  color: 'var(--cds-text-primary)',
+                  borderRadius: 4,
                 }}
               >
                 {msg.role === 'assistant' ? (
@@ -219,8 +312,13 @@ export default function ChatInterface({
                   {msg.referencedDocuments.map((doc) => (
                     <span
                       key={doc}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-                      style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
+                      className="flex items-center gap-1 px-2 py-0.5 text-xs"
+                      style={{
+                        background: 'var(--cds-support-info-bg)',
+                        border: '1px solid rgba(69,137,255,0.25)',
+                        color: 'var(--cds-text-secondary)',
+                        borderRadius: 2,
+                      }}
                     >
                       <FileText size={10} />
                       {doc}
@@ -228,7 +326,7 @@ export default function ChatInterface({
                   ))}
                 </div>
               )}
-              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-xs" style={{ color: 'var(--cds-text-placeholder)' }}>
                 {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -241,7 +339,12 @@ export default function ChatInterface({
             <div className="flex-shrink-0 mt-1"><CommanderAvatar size="sm" /></div>
             <div
               className="px-4 py-3 text-sm max-w-[85%] leading-relaxed"
-              style={{ background: 'var(--color-nebula)', border: '1px solid rgba(0,170,255,0.15)', color: 'var(--color-text-primary)', borderRadius: '18px 18px 18px 4px' }}
+              style={{
+                background: 'var(--cds-layer-03)',
+                border: '1px solid var(--cds-border-subtle)',
+                color: 'var(--cds-text-primary)',
+                borderRadius: 4,
+              }}
             >
               <ReactMarkdown components={mdComponents}>{streamingText}</ReactMarkdown>
               <span className="typewriter-cursor" />
@@ -253,12 +356,19 @@ export default function ChatInterface({
         {isLoading && !streamingText && (
           <div className="flex gap-2 items-center">
             <CommanderAvatar size="sm" />
-            <div className="flex gap-1 px-4 py-3 rounded-2xl" style={{ background: 'var(--color-nebula)', border: '1px solid rgba(0,170,255,0.15)' }}>
+            <div
+              className="flex gap-1 px-4 py-3"
+              style={{
+                background: 'var(--cds-layer-03)',
+                border: '1px solid var(--cds-border-subtle)',
+                borderRadius: 4,
+              }}
+            >
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: 'var(--color-orbit-blue)' }}
+                  className="w-2 h-2"
+                  style={{ background: 'var(--ibm-blue-40)' }}
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }}
                 />
@@ -274,7 +384,7 @@ export default function ChatInterface({
       {input.length === 0 && messages.length < 3 && (
         <div className="px-4 pb-2 flex flex-col gap-1.5">
           {selectedNode && (
-            <p className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '10px', marginBottom: 2 }}>
+            <p className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px', marginBottom: 2 }}>
               ASK ABOUT: {selectedNode.title.toUpperCase()}
             </p>
           )}
@@ -283,8 +393,13 @@ export default function ChatInterface({
               <button
                 key={prompt}
                 onClick={() => sendMessage(prompt)}
-                className="text-xs px-3 py-1.5 rounded-full transition-all text-left"
-                style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
+                className="text-xs px-3 py-1.5 transition-all text-left"
+                style={{
+                  background: 'var(--cds-support-info-bg)',
+                  border: '1px solid rgba(69,137,255,0.2)',
+                  color: 'var(--cds-text-secondary)',
+                  borderRadius: 2,
+                }}
               >
                 {prompt}
               </button>
@@ -296,32 +411,37 @@ export default function ChatInterface({
       {/* Input area */}
       <div
         className="flex gap-2 px-4 py-3 flex-shrink-0"
-        style={{ borderTop: '1px solid rgba(0,170,255,0.15)' }}
+        style={{ borderTop: '1px solid var(--cds-border-subtle)' }}
       >
         <textarea
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Mission Control anything..."
+          placeholder="Ask your knowledge assistant anything..."
           rows={1}
           disabled={isLoading}
-          className="flex-1 px-4 py-2.5 rounded-xl text-sm resize-none outline-none"
+          className="flex-1 px-4 py-2.5 text-sm resize-none outline-none"
           style={{
-            background: 'var(--color-panel)',
-            border: '1px solid rgba(0,170,255,0.2)',
-            color: 'var(--color-text-primary)',
-            fontFamily: "'Space Grotesk', sans-serif",
+            background: 'var(--cds-layer-01)',
+            border: '1px solid var(--cds-border-subtle)',
+            color: 'var(--cds-text-primary)',
+            fontFamily: "'IBM Plex Sans', sans-serif",
             lineHeight: 1.5,
+            borderRadius: 4,
           }}
         />
         <button
           onClick={() => sendMessage(input)}
           disabled={!input.trim() || isLoading}
-          className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all self-end"
+          className="flex-shrink-0 w-10 h-10 flex items-center justify-center transition-all self-end"
           style={{
-            background: input.trim() && !isLoading ? 'var(--color-orbit-blue)' : 'rgba(0,170,255,0.2)',
-            color: input.trim() && !isLoading ? 'white' : 'rgba(0,170,255,0.4)',
+            background: input.trim() && !isLoading ? 'var(--ibm-blue-60)' : 'var(--cds-layer-03)',
+            color: input.trim() && !isLoading ? 'white' : 'var(--cds-text-placeholder)',
+            borderRadius: 4,
+            border: input.trim() && !isLoading
+              ? '1px solid var(--cds-border-interactive)'
+              : '1px solid var(--cds-border-subtle)',
           }}
         >
           <Send size={16} />

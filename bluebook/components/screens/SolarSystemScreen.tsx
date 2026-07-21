@@ -53,7 +53,6 @@ export default function SolarSystemScreen() {
   );
 
   const handleQuizBack = useCallback(() => {
-    // updateNodeScore already marks the node complete; only set status if quiz was abandoned
     const nodeId = quizNodeId;
     setQuizNodeId(null);
     if (nodeId) {
@@ -65,19 +64,21 @@ export default function SolarSystemScreen() {
   }, [quizNodeId, nodes, updateNodeStatus]);
 
   const readinessColour = {
-    'Not Started':     { fg: 'var(--color-text-muted)',  bg: 'rgba(255,255,255,0.03)' },
-    'In Progress':     { fg: 'var(--color-orbit-blue)',  bg: 'rgba(0,170,255,0.08)' },
-    'Partially Ready': { fg: '#f59e0b',                  bg: 'rgba(245,158,11,0.08)' },
-    'Ready':           { fg: '#22c55e',                  bg: 'rgba(34,197,94,0.08)' },
-    'Fully Prepared':  { fg: '#22c55e',                  bg: 'rgba(34,197,94,0.12)' },
+    'Not Started':     { fg: 'var(--cds-text-placeholder)', bg: 'rgba(255,255,255,0.04)' },
+    'In Progress':     { fg: 'var(--ibm-blue-40)',          bg: 'var(--cds-support-info-bg)' },
+    'Partially Ready': { fg: 'var(--cds-support-warning)',  bg: 'var(--cds-support-warning-bg)' },
+    'Ready':           { fg: 'var(--cds-support-success)',  bg: 'var(--cds-support-success-bg)' },
+    'Fully Prepared':  { fg: 'var(--cds-support-success)',  bg: 'var(--cds-support-success-bg)' },
   };
   const rc = readinessColour[overallScore.readinessLevel];
 
-  // Whether the briefing sidebar takes up space (affects map left offset)
   const hasBriefing = !!onboardingBriefingCard && !!userProfile;
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden" style={{ background: 'var(--color-void)' }}>
+    <div
+      className="relative w-screen h-screen overflow-hidden"
+      style={{ background: 'var(--cds-background)' }}
+    >
 
       {/* ── Onboarding briefing card (left sidebar) ──────── */}
       {hasBriefing && (
@@ -90,19 +91,17 @@ export default function SolarSystemScreen() {
       )}
 
       {/* ── Main content area (node map) ──────────────────── */}
-      <div
-        className="absolute inset-0 transition-all duration-300"
-        style={{ left: hasBriefing ? 0 : 0 }} // briefing is overlay, map fills screen
-      >
-        {/* Subtle grid background */}
+      <div className="absolute inset-0 transition-all duration-300">
+        {/* Subtle Carbon grid background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(0,170,255,0.025) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,170,255,0.025) 1px, transparent 1px)
+              linear-gradient(var(--cds-border-subtle) 1px, transparent 1px),
+              linear-gradient(90deg, var(--cds-border-subtle) 1px, transparent 1px)
             `,
-            backgroundSize: '44px 44px',
+            backgroundSize: '48px 48px',
+            opacity: 0.35,
           }}
         />
 
@@ -116,12 +115,24 @@ export default function SolarSystemScreen() {
       {/* ── HUD overlay ───────────────────────────────────── */}
       <div className="hud-overlay no-print">
         {/* TOP LEFT — brand */}
-        <div className="absolute top-4 left-4 flex items-center gap-3">
-          <span className="text-gradient-orbit font-bold text-xl tracking-widest">IBM BLUEBOOK</span>
+        <div
+          className="absolute top-4 left-4 flex items-center gap-3 px-3 py-2"
+          style={{
+            background: 'var(--cds-layer-01)',
+            border: '1px solid var(--cds-border-subtle)',
+            borderRadius: 4,
+          }}
+        >
+          <span
+            className="font-bold tracking-widest"
+            style={{ color: 'var(--ibm-blue-40)', fontSize: '14px', letterSpacing: '0.1em' }}
+          >
+            IBM BLUEBOOK
+          </span>
           <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full animate-pulse-glow" style={{ background: 'var(--color-signal)' }} />
-            <span className="font-terminal text-xs" style={{ color: 'var(--color-signal)', fontSize: '10px' }}>
-              CONNECTED
+            <div className="w-2 h-2 animate-pulse-glow" style={{ background: 'var(--cds-support-success)', borderRadius: 1 }} />
+            <span className="font-terminal text-xs" style={{ color: 'var(--cds-support-success)', fontSize: '10px' }}>
+              ACTIVE
             </span>
           </div>
         </div>
@@ -129,37 +140,59 @@ export default function SolarSystemScreen() {
         {/* TOP RIGHT — readiness + chat */}
         <div className="absolute top-4 right-4 flex items-center gap-3">
           <div
-            className="px-3 py-1.5 rounded-xl font-terminal text-xs font-bold"
-            style={{ background: rc.bg, color: rc.fg, border: `1px solid ${rc.fg}33`, fontSize: '11px' }}
+            className="px-3 py-1.5 font-terminal text-xs font-bold"
+            style={{
+              background: rc.bg,
+              color: rc.fg,
+              border: `1px solid ${rc.fg}44`,
+              fontSize: '11px',
+              borderRadius: 4,
+            }}
           >
             {overallScore.readinessLevel.toUpperCase()}
           </div>
           <button
             onClick={() => setChatOpen(true)}
-            className="glass-panel p-2.5 rounded-xl transition-all"
-            style={{ border: '1px solid rgba(0,170,255,0.2)' }}
+            className="p-2.5 transition-all"
+            style={{
+              background: 'var(--cds-layer-01)',
+              border: '1px solid var(--cds-border-subtle)',
+              borderRadius: 4,
+            }}
           >
-            <MessageSquare size={18} style={{ color: 'var(--color-orbit-blue)' }} />
+            <MessageSquare size={18} style={{ color: 'var(--ibm-blue-40)' }} />
           </button>
         </div>
 
         {/* BOTTOM LEFT — progress indicators */}
-        <div className="absolute bottom-6 left-4 flex flex-col gap-2">
-          <span className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+        <div
+          className="absolute bottom-6 left-4 flex flex-col gap-2 px-3 py-2"
+          style={{
+            background: 'var(--cds-layer-01)',
+            border: '1px solid var(--cds-border-subtle)',
+            borderRadius: 4,
+          }}
+        >
+          <span className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px' }}>
             {completedCount} / {nodes.length} TOPICS VERIFIED
           </span>
           <div className="flex gap-1.5">
             {nodes.map((n) => {
               const dotColor = n.status === 'complete'
-                ? (n.score?.nodeColour === 'green' ? '#22c55e' : n.score?.nodeColour === 'red' ? '#ef4444' : '#f59e0b')
-                : n.status === 'reading' ? 'var(--color-orbit-blue)'
-                : 'rgba(255,255,255,0.12)';
+                ? (n.score?.nodeColour === 'green'
+                  ? 'var(--cds-support-success)'
+                  : n.score?.nodeColour === 'red'
+                  ? 'var(--cds-support-error)'
+                  : 'var(--cds-support-warning)')
+                : n.status === 'reading'
+                ? 'var(--ibm-blue-40)'
+                : 'var(--cds-border-strong)';
               return (
                 <div
                   key={n.id}
                   title={n.title}
-                  className="w-2 h-2 rounded-full transition-all cursor-pointer"
-                  style={{ background: dotColor, boxShadow: n.status !== 'untouched' ? `0 0 5px ${dotColor}` : 'none' }}
+                  className="w-2 h-2 transition-all cursor-pointer"
+                  style={{ background: dotColor, borderRadius: 2 }}
                   onClick={() => handleNodeClick(n)}
                 />
               );

@@ -18,12 +18,12 @@ export default function SolarSystem({ nodes, onNodeHover, onNodeClick }: SolarSy
     <Canvas
       camera={{ position: [0, 18, 22], fov: 60 }}
       gl={{ antialias: true, alpha: false }}
-      style={{ background: '#020408' }}
+      style={{ background: '#161616' }}
     >
-      {/* Lighting */}
-      <ambientLight intensity={0.15} />
-      <directionalLight position={[20, 20, 10]} intensity={0.4} color="#a0c0ff" />
-      <directionalLight position={[-20, -10, -10]} intensity={0.2} color="#ffa040" />
+      {/* Lighting — neutral, IBM dark-mode palette */}
+      <ambientLight intensity={0.25} />
+      <directionalLight position={[20, 20, 10]} intensity={0.5} color="#c8d8ff" />
+      <directionalLight position={[-20, -10, -10]} intensity={0.15} color="#a0b8e0" />
 
       {/* Controls */}
       <OrbitControls
@@ -40,15 +40,15 @@ export default function SolarSystem({ nodes, onNodeHover, onNodeClick }: SolarSy
       {/* Sun */}
       <Sun />
 
-      {/* Orbit path rings */}
+      {/* Orbit path rings — IBM Carbon colour tokens */}
       {nodes.map((node) => {
         const colour =
           node.status === 'complete'
-            ? (node.score?.nodeColour === 'green' ? '#22c55e' : node.score?.nodeColour === 'red' ? '#ef4444' : '#f59e0b')
+            ? (node.score?.nodeColour === 'green' ? '#42be65' : node.score?.nodeColour === 'red' ? '#fa4d56' : '#f1c21b')
             : node.status === 'reading'
-            ? '#00aaff'
-            : '#334455';
-        const opacity = node.status === 'complete' ? 0.3 : node.status === 'reading' ? 0.2 : 0.07;
+            ? '#4589ff'
+            : '#393939';
+        const opacity = node.status === 'complete' ? 0.28 : node.status === 'reading' ? 0.18 : 0.06;
 
         return (
           <mesh key={`orbit-${node.id}`} rotation-x={Math.PI / 2}>

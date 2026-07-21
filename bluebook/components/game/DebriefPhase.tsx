@@ -16,8 +16,8 @@ export default function DebriefPhase({ planet: _planet, onReturn }: DebriefPhase
       </p>
       <button
         onClick={onReturn}
-        className="w-full py-3 rounded-xl font-terminal text-sm tracking-widest font-bold"
-        style={{ background: 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))', color: '#fff' }}
+        className="w-full py-3 font-terminal text-sm tracking-widest font-bold"
+        style={{ background: 'var(--ibm-blue-60)', border: '1px solid var(--cds-border-interactive)', color: '#fff', borderRadius: 4 }}
       >
         BACK TO MAP →
       </button>

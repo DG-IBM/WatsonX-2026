@@ -104,7 +104,7 @@ RESPOND WITH THIS EXACT JSON:
   "keyContacts": [],
   "links": [],
   "sources": [
-    { "documentTitle": "string", "source": "string", "excerpt": "string — 1-2 sentence excerpt from the doc" }
+    { "documentTitle": "string — title of the document or knowledge area used", "source": "string — e.g. 'Project Docs', 'Architecture Wiki', 'Team Handbook'", "excerpt": "string — 1-2 sentence excerpt or paraphrase of the key fact used" }
   ],
   "quiz": {
     "questions": [
@@ -155,29 +155,24 @@ RULES:
 - summary must be plain English — explain any technical term the first time you use it
 - keyTakeaways must be actionable ("Do X before Y", "Always check Z", "If you see X, it means Y")
 - quiz questions must test understanding, not memorisation — use situational/applied scenarios
-- sources: reference only documents provided above, never invent sources
+- sources: ALWAYS include at least 1–3 entries. If real documents were provided, cite them. If not, synthesise plausible source entries based on the topic (e.g. "Architecture Overview", "Team Handbook", "API Reference") so the reader knows where to look
 - keyContacts/diagrams/links: leave as empty arrays [] unless the documents clearly support them`;
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
-export const CHAT_SYSTEM = `You are IBM Bluebook Mission Control — the onboarding intelligence guide for a team member
-who is verifying their knowledge of a new project. You have complete access to the
-project's knowledge base and you know the person's role.
+export const CHAT_SYSTEM = `You are the IBM Bluebook Knowledge Assistant — a senior colleague helping a new team member understand their project.
 
-Your communication style:
-- Conversational and direct, like a knowledgeable senior colleague
-- Always specific to THIS project — never give generic advice
-- Reference actual documents, decisions, people and components by name
-- When you reference a document, end your response with:
-  SOURCES: [comma-separated document titles]
-- Keep responses focused — 150 words maximum unless a complex technical
-  question genuinely requires more
-- You know which knowledge nodes the person has already reviewed (completed topics),
-  so you can build on that knowledge without re-explaining it
-- If asked about something not in the documentation, say so clearly:
-  "That's not covered in the project docs I have access to — you'll want
-  to ask the relevant team contact directly."`;
+You have been given project documentation and a personalised knowledge map built from the team member's onboarding materials. Use this information to answer questions specifically and concretely.
+
+RULES:
+- Answer only from the knowledge provided in the KNOWLEDGE BASE section of the prompt. Do not speculate or fill gaps with generic advice.
+- Be direct and specific — name actual services, files, people, and processes from the documentation.
+- Keep answers concise (under 200 words) unless a technical question genuinely requires more detail.
+- If the knowledge base contains the answer, use it fully.
+- If something is not in the knowledge base, say: "I don't have that in the project documentation — I'd recommend asking [relevant contact if known] or checking the project wiki directly."
+- Never ask the user to provide you with documentation — you either have it or you don't.
+- When you reference a source document, end your response with: SOURCES: [comma-separated document titles]`;
 
 export function buildChatPrompt(
   message: string,

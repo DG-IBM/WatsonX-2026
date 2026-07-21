@@ -35,7 +35,7 @@ export default function ChatSidebar() {
             exit={{ opacity: 0 }}
             onClick={() => setChatOpen(false)}
             className="fixed inset-0 z-40"
-            style={{ background: 'rgba(2,4,8,0.4)' }}
+            style={{ background: 'rgba(0,0,0,0.5)' }}
           />
 
           {/* Sidebar panel */}
@@ -45,21 +45,22 @@ export default function ChatSidebar() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-            className="fixed right-0 top-0 h-full z-50 flex flex-col glass-panel-bright"
+            className="fixed right-0 top-0 h-full z-50 flex flex-col"
             style={{
               width: 'min(560px, 100vw)',
-              borderLeft: '1px solid rgba(0,170,255,0.25)',
-              borderRadius: '0 0 0 0',
+              background: 'var(--cds-layer-02)',
+              borderLeft: '1px solid var(--cds-border-subtle)',
             }}
           >
             {/* Close button */}
             <button
               onClick={() => setChatOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full z-10 transition-all"
+              className="absolute top-4 right-4 p-2 z-10 transition-all"
               style={{
-                background: 'rgba(0,170,255,0.08)',
-                border: '1px solid rgba(0,170,255,0.2)',
-                color: 'var(--color-text-secondary)',
+                background: 'var(--cds-layer-03)',
+                border: '1px solid var(--cds-border-subtle)',
+                color: 'var(--cds-text-secondary)',
+                borderRadius: 4,
               }}
             >
               <X size={16} />
@@ -72,6 +73,9 @@ export default function ChatSidebar() {
               documents={mcpDocuments}
               selectedNode={selectedNode}
               onSendMessage={addChatMessage}
+              mcpUrl={mcpConnection.url}
+              mcpToken={mcpConnection.token}
+              mcpApiKey={mcpConnection.apiKey}
               projectName={
                 mcpConnection.url
                   ? (() => {

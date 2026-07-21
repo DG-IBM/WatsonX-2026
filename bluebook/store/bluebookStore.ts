@@ -100,6 +100,7 @@ const initialState: BluebookState = {
   mcpConnection: {
     url: '',
     token: '',
+    apiKey: '',
     status: 'idle',
     documentCount: 0,
     sources: [],

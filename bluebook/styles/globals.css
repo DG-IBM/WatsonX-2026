@@ -1,40 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── IBM Carbon Design System — Dark mode colour tokens ──────── */
 :root {
-  --color-void:        #020408;
-  --color-deep-space:  #060d1a;
-  --color-nebula:      #0d1f35;
-  --color-panel:       #0a1628;
-  --color-panel-light: #0f2340;
+  /* Background layers */
+  --cds-background:           #161616;  /* $background          */
+  --cds-background-hover:     #1e1e1e;
+  --cds-layer-01:             #1c1c1c;  /* layer / ui-01        */
+  --cds-layer-02:             #282828;  /* layer-02 / ui-02     */
+  --cds-layer-03:             #353535;
+  --cds-layer-hover-01:       #252525;
+  --cds-layer-hover-02:       #333333;
 
-  --color-orbit-blue:  #00aaff;
-  --color-orbit-glow:  #0066cc;
-  --color-orbit-dim:   #003d7a;
+  /* Interactive — IBM Blue */
+  --cds-interactive:          #0f62fe;  /* $interactive         */
+  --cds-interactive-hover:    #0353e9;
+  --cds-link-primary:         #78a9ff;  /* $link-primary        */
+  --cds-link-secondary:       #a6c8ff;
+  --cds-focus:                #ffffff;
 
-  --color-gold:        #ffd700;
-  --color-gold-dim:    #b8960a;
+  /* Text */
+  --cds-text-primary:         #f4f4f4;  /* $text-primary        */
+  --cds-text-secondary:       #c6c6c6;  /* $text-secondary      */
+  --cds-text-placeholder:     #6f6f6f;  /* $text-placeholder    */
+  --cds-text-disabled:        #525252;
+  --cds-text-on-color:        #ffffff;
+  --cds-text-inverse:         #161616;
 
-  --color-alert:       #ff4444;
-  --color-alert-dim:   #8b0000;
+  /* Border */
+  --cds-border-strong:        #525252;  /* $border-strong       */
+  --cds-border-subtle:        #393939;  /* $border-subtle       */
+  --cds-border-interactive:   #4589ff;  /* $border-interactive  */
 
-  --color-signal:      #00ff88;
-  --color-signal-dim:  #006633;
+  /* Icon */
+  --cds-icon-primary:         #f4f4f4;
+  --cds-icon-secondary:       #8d8d8d;
+  --cds-icon-interactive:     #ffffff;
 
-  --color-text-primary:   #e8f4fd;
-  --color-text-secondary: #7aaccc;
-  --color-text-muted:     #3d6680;
-  --color-text-terminal:  #00ff88;
+  /* Support colours */
+  --cds-support-success:      #42be65;
+  --cds-support-warning:      #f1c21b;
+  --cds-support-error:        #fa4d56;
+  --cds-support-info:         #4589ff;
+  --cds-support-success-bg:   rgba(66,190,101,0.12);
+  --cds-support-warning-bg:   rgba(241,194,27,0.12);
+  --cds-support-error-bg:     rgba(250,77,86,0.12);
+  --cds-support-info-bg:      rgba(69,137,255,0.12);
 
-  --planet-gold:    #f4a460;
-  --planet-storm:   #4a3728;
-  --planet-ice:     #a8d4e6;
-  --planet-lava:    #cc3300;
-  --planet-ocean:   #1a6b8a;
-  --planet-gas:     #9b59b6;
+  /* IBM Brand Blue accent */
+  --ibm-blue-60:              #0f62fe;
+  --ibm-blue-50:              #4589ff;
+  --ibm-blue-40:              #78a9ff;
+  --ibm-blue-20:              #d0e2ff;
+  --ibm-cyan-40:              #33b1ff;
+  --ibm-teal-40:              #08bdba;
+  --ibm-purple-40:            #be95ff;
+  --ibm-magenta-40:           #ff7eb6;
+
+  /* Legacy aliases — keeps existing JSX working during transition */
+  --color-void:               var(--cds-background);
+  --color-deep-space:         var(--cds-layer-01);
+  --color-nebula:             var(--cds-layer-02);
+  --color-panel:              var(--cds-layer-01);
+  --color-panel-light:        var(--cds-layer-02);
+
+  --color-orbit-blue:         var(--cds-link-primary);
+  --color-orbit-glow:         var(--ibm-blue-60);
+  --color-orbit-dim:          var(--cds-border-interactive);
+
+  --color-gold:               var(--cds-support-warning);
+  --color-gold-dim:           #a98700;
+
+  --color-alert:              var(--cds-support-error);
+  --color-alert-dim:          #750e13;
+
+  --color-signal:             var(--cds-support-success);
+  --color-signal-dim:         #198038;
+
+  --color-text-primary:       var(--cds-text-primary);
+  --color-text-secondary:     var(--cds-text-secondary);
+  --color-text-muted:         var(--cds-text-placeholder);
+  --color-text-terminal:      var(--ibm-cyan-40);
 }
 
 @layer base {
@@ -50,95 +99,79 @@
   }
 
   body {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    background-color: var(--color-void);
-    color: var(--color-text-primary);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background-color: var(--cds-background);
+    color: var(--cds-text-primary);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--color-deep-space); }
-  ::-webkit-scrollbar-thumb { background: var(--color-orbit-dim); border-radius: 2px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-orbit-blue); }
+  ::-webkit-scrollbar-track { background: var(--cds-layer-01); }
+  ::-webkit-scrollbar-thumb { background: var(--cds-border-strong); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--cds-border-interactive); }
 
-  pre, code { font-family: 'Space Mono', monospace; }
+  pre, code { font-family: 'IBM Plex Mono', monospace; }
 }
 
 @layer components {
 
   /* ── Fonts ─────────────────────────────────────────────────── */
-  .font-terminal { font-family: 'Space Mono', monospace; }
+  .font-terminal { font-family: 'IBM Plex Mono', monospace; }
 
-  /* ── Panels ────────────────────────────────────────────────── */
+  /* ── Panels (Carbon-style) ─────────────────────────────────── */
   .glass-panel {
-    background: rgba(13, 31, 53, 0.80);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(0, 170, 255, 0.12);
-    border-radius: 14px;
+    background: var(--cds-layer-01);
+    border: 1px solid var(--cds-border-subtle);
+    border-radius: 4px;
   }
 
   .glass-panel-bright {
-    background: rgba(10, 22, 40, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 170, 255, 0.28);
-    border-radius: 16px;
+    background: var(--cds-layer-02);
+    border: 1px solid var(--cds-border-subtle);
+    border-radius: 4px;
   }
 
+  /* Carbon uses sharp/slight radius, no frosted glass */
+  .carbon-tile {
+    background: var(--cds-layer-01);
+    border: 1px solid var(--cds-border-subtle);
+    border-radius: 4px;
+    padding: 16px;
+  }
+
+  .carbon-tile-interactive:hover {
+    background: var(--cds-layer-hover-01);
+    cursor: pointer;
+  }
+
+  /* ── Terminal-style border ─────────────────────────────────── */
   .terminal-border {
-    border: 1px solid rgba(0, 255, 136, 0.35) !important;
-    box-shadow:
-      0 0 0 1px rgba(0, 255, 136, 0.08),
-      0 0 24px rgba(0, 255, 136, 0.12),
-      inset 0 0 24px rgba(0, 255, 136, 0.03);
+    border: 1px solid var(--cds-border-interactive) !important;
+    box-shadow: 0 0 0 1px rgba(69,137,255,0.08);
   }
 
+  /* ── Interactive glow (IBM Blue) ───────────────────────────── */
   .orbit-glow {
-    box-shadow:
-      0 0 24px rgba(0, 170, 255, 0.35),
-      0 0 80px rgba(0, 170, 255, 0.08);
+    box-shadow: 0 0 0 1px var(--cds-border-interactive);
   }
 
   .gold-glow {
-    box-shadow:
-      0 0 24px rgba(255, 215, 0, 0.45),
-      0 0 80px rgba(255, 215, 0, 0.12);
+    box-shadow: 0 0 0 1px rgba(241,194,27,0.4);
   }
 
-  /* ── Text gradients ────────────────────────────────────────── */
+  /* ── Text colours ──────────────────────────────────────────── */
   .text-gradient-orbit {
-    background: linear-gradient(135deg, #00aaff 0%, #00ff88 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--ibm-blue-40);
   }
 
   .text-gradient-gold {
-    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--cds-support-warning);
   }
 
-  /* ── Scanline overlay ──────────────────────────────────────── */
+  /* ── Scanline (removed for Carbon — too space-themed) ───────── */
   .scanline { position: relative; }
-  .scanline::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 255, 136, 0.012) 2px,
-      rgba(0, 255, 136, 0.012) 4px
-    );
-    pointer-events: none;
-    border-radius: inherit;
-  }
 
   /* ── HUD overlay ───────────────────────────────────────────── */
   .hud-overlay {
@@ -149,13 +182,13 @@
   }
   .hud-overlay > * { pointer-events: auto; }
 
-  /* ── Planet modal ──────────────────────────────────────────── */
+  /* ── Modal backdrop (Carbon-style) ────────────────────────── */
   .planet-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(2, 4, 8, 0.92);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.60);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index: 100;
     display: flex;
     align-items: center;
@@ -168,22 +201,22 @@
     display: inline-block;
     width: 2px;
     height: 1em;
-    background: var(--color-text-terminal);
+    background: var(--ibm-blue-40);
     margin-left: 2px;
     vertical-align: text-bottom;
     animation: blink-cursor 1s step-end infinite;
   }
 
-  /* ── Challenge badges ──────────────────────────────────────── */
-  .badge-scenario       { background: rgba(0,170,255,0.12); color: #00aaff; border: 1px solid rgba(0,170,255,0.28); }
-  .badge-roleplay       { background: rgba(155,89,182,0.12); color: #b06fe0; border: 1px solid rgba(155,89,182,0.28); }
-  .badge-detective      { background: rgba(255,180,0,0.12); color: #ffb400; border: 1px solid rgba(255,180,0,0.28); }
-  .badge-build          { background: rgba(0,255,136,0.10); color: #00ff88; border: 1px solid rgba(0,255,136,0.28); }
-  .badge-transmission   { background: rgba(255,107,53,0.12); color: #ff6b35; border: 1px solid rgba(255,107,53,0.28); }
+  /* ── Status badges ─────────────────────────────────────────── */
+  .badge-scenario       { background: var(--cds-support-info-bg);    color: var(--ibm-blue-40);   border: 1px solid rgba(69,137,255,0.3); }
+  .badge-roleplay       { background: rgba(190,149,255,0.10);         color: var(--ibm-purple-40); border: 1px solid rgba(190,149,255,0.25); }
+  .badge-detective      { background: var(--cds-support-warning-bg);  color: var(--cds-support-warning); border: 1px solid rgba(241,194,27,0.3); }
+  .badge-build          { background: var(--cds-support-success-bg);  color: var(--cds-support-success); border: 1px solid rgba(66,190,101,0.28); }
+  .badge-transmission   { background: rgba(255,126,182,0.10);         color: var(--ibm-magenta-40); border: 1px solid rgba(255,126,182,0.25); }
 
-  /* ── Orbit loading rings ───────────────────────────────────── */
+  /* ── Loading rings (kept for LoadingSequence) ──────────────── */
   .orbit-ring {
-    border: 1px solid rgba(0, 170, 255, 0.25);
+    border: 1px solid var(--cds-border-subtle);
     border-radius: 50%;
     position: absolute;
     top: 50%; left: 50%;

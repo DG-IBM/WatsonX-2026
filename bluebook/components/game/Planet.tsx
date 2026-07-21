@@ -17,10 +17,10 @@ interface PlanetMeshProps {
 /** Derive the glow colour for a completed node based on its score */
 function getCompletedGlowColor(node: KnowledgeNode): string {
   switch (node.score?.nodeColour) {
-    case 'green':  return '#22c55e';
-    case 'yellow': return '#f59e0b';
-    case 'red':    return '#ef4444';
-    default:       return '#ffd700';
+    case 'green':  return '#42be65';
+    case 'yellow': return '#f1c21b';
+    case 'red':    return '#fa4d56';
+    default:       return '#f1c21b';
   }
 }
 
@@ -135,8 +135,8 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
         <mesh rotation-x={Math.PI / 2}>
           <torusGeometry args={[visualConfig.size * 1.75, 0.025, 2, 64]} />
           <meshStandardMaterial
-            color={planet.score.nodeColour === 'red' ? '#ef4444' : '#f59e0b'}
-            emissive={planet.score.nodeColour === 'red' ? '#ef4444' : '#f59e0b'}
+            color={planet.score.nodeColour === 'red' ? '#fa4d56' : '#f1c21b'}
+            emissive={planet.score.nodeColour === 'red' ? '#fa4d56' : '#f1c21b'}
             emissiveIntensity={0.5}
             transparent
             opacity={0.45}
@@ -149,17 +149,17 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
         <Html center position={[0, -(visualConfig.size + 0.8), 0]} distanceFactor={8}>
           <div
             style={{
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: '9px',
               color: status === 'complete'
-                ? (planet.score?.nodeColour === 'green' ? '#22c55e' : planet.score?.nodeColour === 'red' ? '#ef4444' : '#f59e0b')
+                ? (planet.score?.nodeColour === 'green' ? '#42be65' : planet.score?.nodeColour === 'red' ? '#fa4d56' : '#f1c21b')
                 : status === 'reading'
-                ? '#00aaff'
-                : 'rgba(200,220,240,0.6)',
-              background: 'rgba(2,4,8,0.88)',
+                ? '#78a9ff'
+                : '#8d8d8d',
+              background: 'rgba(22,22,22,0.92)',
               padding: '2px 8px',
               borderRadius: '4px',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid rgba(69,137,255,0.2)',
               whiteSpace: 'nowrap',
               pointerEvents: 'none',
             }}
@@ -174,9 +174,9 @@ export default function PlanetMesh({ planet, initialAngle, onHover, onClick }: P
         <Html center position={[0, -(visualConfig.size + 0.8), 0]} distanceFactor={8}>
           <div
             style={{
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: "'IBM Plex Mono', monospace",
               fontSize: '8px',
-              color: 'rgba(160,190,220,0.35)',
+              color: 'rgba(82,82,82,0.7)',
               pointerEvents: 'none',
               whiteSpace: 'nowrap',
             }}

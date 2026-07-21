@@ -18,7 +18,7 @@ interface NodeDetailPanelProps {
 const SECTION_LABEL = (
   icon: React.ReactNode,
   text: string,
-  color = 'var(--color-orbit-blue)'
+  color = 'var(--ibm-blue-40)'
 ) => (
   <div className="flex items-center gap-2 mb-3">
     <span style={{ color, flexShrink: 0 }}>{icon}</span>
@@ -28,7 +28,7 @@ const SECTION_LABEL = (
     >
       {text}
     </span>
-    <div className="flex-1 h-px" style={{ background: `${color}22` }} />
+    <div className="flex-1 h-px" style={{ background: 'var(--cds-border-subtle)' }} />
   </div>
 );
 
@@ -56,10 +56,10 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
 
   const nodeColourStyle = hasScore
     ? node.score!.nodeColour === 'green'
-      ? { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.3)' }
+      ? { color: 'var(--cds-support-success)', bg: 'var(--cds-support-success-bg)', border: 'rgba(66,190,101,0.3)' }
       : node.score!.nodeColour === 'yellow'
-      ? { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.3)' }
-      : { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.3)' }
+      ? { color: 'var(--cds-support-warning)', bg: 'var(--cds-support-warning-bg)', border: 'rgba(241,194,27,0.3)' }
+      : { color: 'var(--cds-support-error)', bg: 'var(--cds-support-error-bg)', border: 'rgba(250,77,86,0.3)' }
     : null;
 
   const linkTypeLabel: Record<string, string> = {
@@ -82,35 +82,35 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full z-10 transition-all"
-          style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
+          className="absolute top-4 right-4 p-2 z-10 transition-all"
+          style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', color: 'var(--cds-text-secondary)', borderRadius: 4 }}
         >
           <X size={16} />
         </button>
 
         {/* ── Header ──────────────────────────────────────────── */}
-        <div className="px-7 pt-6 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,170,255,0.12)' }}>
+        <div className="px-7 pt-6 pb-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--cds-border-subtle)' }}>
           <div className="flex items-start gap-3 pr-10">
             <div
-              className="w-3 h-3 rounded-full mt-2 flex-shrink-0"
-              style={{ background: node.visualConfig.color, boxShadow: `0 0 8px ${node.visualConfig.emissiveColor}` }}
+              className="w-3 h-3 mt-2 flex-shrink-0"
+              style={{ background: node.visualConfig.color, borderRadius: 2 }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                <span className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px' }}>
                   TOPIC {String(node.order).padStart(2, '0')}
                 </span>
               </div>
-              <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
+              <h2 className="text-2xl font-bold" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.2 }}>
                 {node.title}
               </h2>
               <div className="flex items-center gap-3 flex-wrap mt-2">
-                <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--cds-text-secondary)' }}>
                   <Hash size={10} />
                   {node.sources.length} source{node.sources.length !== 1 ? 's' : ''}
                 </span>
                 {node.keyContacts.length > 0 && (
-                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--cds-text-secondary)' }}>
                     <Users size={10} />
                     {node.keyContacts.length} contact{node.keyContacts.length !== 1 ? 's' : ''}
                   </span>
@@ -118,17 +118,17 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                 {/* Status badge */}
                 {hasScore && nodeColourStyle ? (
                   <span
-                    className="font-terminal text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: nodeColourStyle.bg, border: `1px solid ${nodeColourStyle.border}`, color: nodeColourStyle.color, fontSize: '10px' }}
+                    className="font-terminal text-xs px-2 py-0.5"
+                    style={{ background: nodeColourStyle.bg, border: `1px solid ${nodeColourStyle.border}`, color: nodeColourStyle.color, fontSize: '10px', borderRadius: 2 }}
                   >
                     {node.score!.nodeColour.toUpperCase()} · {node.score!.percentage}%  ({node.score!.correctAnswers}/{node.score!.totalQuestions})
                   </span>
                 ) : node.status === 'reading' ? (
-                  <span className="font-terminal text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,170,255,0.1)', border: '1px solid rgba(0,170,255,0.3)', color: 'var(--color-orbit-blue)', fontSize: '10px' }}>
+                  <span className="font-terminal text-xs px-2 py-0.5" style={{ background: 'var(--cds-support-info-bg)', border: '1px solid rgba(69,137,255,0.3)', color: 'var(--ibm-blue-40)', fontSize: '10px', borderRadius: 2 }}>
                     READING
                   </span>
                 ) : (
-                  <span className="font-terminal text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--color-text-muted)', fontSize: '10px' }}>
+                  <span className="font-terminal text-xs px-2 py-0.5" style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', color: 'var(--cds-text-placeholder)', fontSize: '10px', borderRadius: 2 }}>
                     NEW
                   </span>
                 )}
@@ -152,7 +152,7 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Score recap for completed nodes */}
               {hasScore && nodeColourStyle && (
                 <div
-                  className="rounded-xl p-4 flex items-start gap-4"
+                  className="p-4 flex items-start gap-4"
                   style={{ background: nodeColourStyle.bg, border: `1px solid ${nodeColourStyle.border}` }}
                 >
                   <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
@@ -169,7 +169,7 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                         : node.score!.nodeColour === 'yellow' ? 'PARTIAL — REVIEW RECOMMENDED'
                         : 'NEEDS REVISIT'}
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                    <p className="text-sm" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                       {node.score!.nodeColour === 'green'
                         ? "You demonstrated solid understanding of this topic. You're ready to work with this area."
                         : node.score!.nodeColour === 'yellow'
@@ -183,7 +183,7 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Summary */}
               <section>
                 {SECTION_LABEL(<BookOpen size={13} />, 'OVERVIEW')}
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-primary)', lineHeight: 1.85 }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.85 }}>
                   {node.summary}
                 </p>
               </section>
@@ -191,17 +191,17 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Key Takeaways */}
               {node.keyTakeaways.length > 0 && (
                 <section>
-                  {SECTION_LABEL(<CheckCircle size={13} />, 'KEY TAKEAWAYS', 'var(--color-signal)')}
+                  {SECTION_LABEL(<CheckCircle size={13} />, 'KEY TAKEAWAYS', 'var(--cds-support-success)')}
                   <ul className="flex flex-col gap-3">
                     {node.keyTakeaways.map((t, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <span
                           className="font-terminal flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-xs"
-                          style={{ background: 'rgba(0,255,136,0.1)', color: 'var(--color-signal)', border: '1px solid rgba(0,255,136,0.2)', marginTop: 1 }}
+                          style={{ background: 'var(--cds-support-success-bg)', color: 'var(--cds-support-success)', border: '1px solid rgba(66,190,101,0.25)', marginTop: 1 }}
                         >
                           {i + 1}
                         </span>
-                        <span className="text-sm" style={{ color: 'var(--color-text-primary)', lineHeight: 1.75 }}>
+                        <span className="text-sm" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.75 }}>
                           {t}
                         </span>
                       </li>
@@ -213,16 +213,16 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Role Relevance */}
               <section>
                 <div
-                  className="p-4 rounded-xl"
-                  style={{ background: 'rgba(155,89,182,0.07)', border: '1px solid rgba(155,89,182,0.25)', borderLeft: '3px solid #9b59b6' }}
+                  className="p-4"
+                  style={{ background: 'rgba(190,149,255,0.07)', border: '1px solid rgba(190,149,255,0.2)', borderLeft: '3px solid var(--ibm-purple-40)', borderRadius: 4 }}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Target size={13} style={{ color: '#b06fe0' }} />
-                    <span className="font-terminal text-xs tracking-widest" style={{ color: '#b06fe0', fontSize: '11px' }}>
+                    <Target size={13} style={{ color: 'var(--ibm-purple-40)' }} />
+                    <span className="font-terminal text-xs tracking-widest" style={{ color: 'var(--ibm-purple-40)', fontSize: '11px' }}>
                       WHY THIS MATTERS FOR YOUR ROLE
                     </span>
                   </div>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-primary)', lineHeight: 1.75 }}>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.75 }}>
                     {node.roleRelevance}
                   </p>
                 </div>
@@ -231,20 +231,20 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Diagrams */}
               {node.diagrams.length > 0 && (
                 <section>
-                  {SECTION_LABEL(<span style={{ fontSize: 13 }}>◈</span>, 'DIAGRAMS', 'var(--color-gold)')}
+                  {SECTION_LABEL(<span style={{ fontSize: 13 }}>◈</span>, 'DIAGRAMS', 'var(--cds-support-warning)')}
                   <div className="flex flex-col gap-4">
                     {node.diagrams.map((d, i) => (
-                      <div key={i} className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,170,255,0.15)' }}>
+                      <div key={i} className="overflow-hidden" style={{ border: '1px solid var(--cds-border-subtle)', borderRadius: 4 }}>
                         <div className="px-4 py-2 font-terminal text-xs flex items-center justify-between"
-                          style={{ background: 'rgba(0,170,255,0.06)', color: 'var(--color-orbit-blue)', borderBottom: '1px solid rgba(0,170,255,0.15)', fontSize: '11px' }}>
+                          style={{ background: 'var(--cds-layer-03)', color: 'var(--ibm-blue-40)', borderBottom: '1px solid var(--cds-border-subtle)', fontSize: '11px' }}>
                           {d.title}
                         </div>
                         <pre className="px-4 py-4 overflow-x-auto text-xs leading-relaxed"
-                          style={{ fontFamily: "'Space Mono', monospace", color: '#a0c8e8', background: 'rgba(4,10,20,0.8)', margin: 0, lineHeight: 1.7 }}>
+                          style={{ fontFamily: "'IBM Plex Mono', monospace", color: 'var(--ibm-blue-20)', background: 'var(--cds-background)', margin: 0, lineHeight: 1.7 }}>
                           {d.content}
                         </pre>
                         {d.caption && (
-                          <div className="px-4 py-2 text-xs italic" style={{ color: 'var(--color-text-secondary)', background: 'rgba(0,0,0,0.2)' }}>
+                          <div className="px-4 py-2 text-xs italic" style={{ color: 'var(--cds-text-secondary)', background: 'var(--cds-layer-03)' }}>
                             {d.caption}
                           </div>
                         )}
@@ -258,16 +258,16 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               <section>
                 <button
                   onClick={() => setSourcesOpen((o) => !o)}
-                  className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl transition-all mb-0"
-                  style={{ background: 'rgba(0,170,255,0.04)', border: '1px solid rgba(0,170,255,0.1)' }}
+                  className="w-full flex items-center gap-2 py-2.5 px-3 transition-all mb-0"
+                  style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', borderRadius: 4 }}
                 >
-                  <FileText size={13} style={{ color: 'var(--color-text-muted)' }} />
-                  <span className="font-terminal text-xs flex-1 text-left" style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>
+                  <FileText size={13} style={{ color: 'var(--cds-text-placeholder)' }} />
+                  <span className="font-terminal text-xs flex-1 text-left" style={{ color: 'var(--cds-text-secondary)', fontSize: '11px' }}>
                     SOURCES USED ({node.sources.length})
                   </span>
                   {sourcesOpen
-                    ? <ChevronUp size={13} style={{ color: 'var(--color-text-muted)' }} />
-                    : <ChevronDown size={13} style={{ color: 'var(--color-text-muted)' }} />}
+                    ? <ChevronUp size={13} style={{ color: 'var(--cds-text-placeholder)' }} />
+                    : <ChevronDown size={13} style={{ color: 'var(--cds-text-placeholder)' }} />}
                 </button>
                 <AnimatePresence initial={false}>
                   {sourcesOpen && (
@@ -279,17 +279,17 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                     >
                       <div className="flex flex-col gap-2 pt-2">
                         {node.sources.map((s, i) => (
-                          <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(6,13,26,0.6)', border: '1px solid rgba(0,170,255,0.1)' }}>
+                          <div key={i} className="p-3" style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', borderRadius: 4 }}>
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className="font-terminal text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,170,255,0.1)', color: 'var(--color-orbit-blue)', fontSize: '9px' }}>
+                              <span className="font-terminal text-xs px-1.5 py-0.5" style={{ background: 'var(--cds-support-info-bg)', color: 'var(--ibm-blue-40)', fontSize: '9px', borderRadius: 2 }}>
                                 {s.source}
                               </span>
-                              <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                              <span className="text-sm font-medium" style={{ color: 'var(--cds-text-primary)' }}>
                                 {s.documentTitle}
                               </span>
                             </div>
                             {s.excerpt && (
-                              <p className="text-xs italic pl-2" style={{ color: 'var(--color-text-muted)', lineHeight: 1.65, borderLeft: '2px solid rgba(0,170,255,0.2)' }}>
+                              <p className="text-xs italic pl-2" style={{ color: 'var(--cds-text-placeholder)', lineHeight: 1.65, borderLeft: '2px solid var(--cds-border-interactive)' }}>
                                 &ldquo;{s.excerpt}&rdquo;
                               </p>
                             )}
@@ -308,21 +308,21 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Key Contacts */}
               {node.keyContacts.length > 0 && (
                 <section>
-                  {SECTION_LABEL(<Users size={13} />, 'KEY CONTACTS', '#ffb400')}
+                  {SECTION_LABEL(<Users size={13} />, 'KEY CONTACTS', 'var(--cds-support-warning)')}
                   <div className="flex flex-col gap-2">
                     {node.keyContacts.map((c, i) => (
-                      <div key={i} className="p-3 rounded-xl" style={{ background: 'rgba(255,180,0,0.05)', border: '1px solid rgba(255,180,0,0.15)' }}>
+                      <div key={i} className="p-3" style={{ background: 'var(--cds-support-warning-bg)', border: '1px solid rgba(241,194,27,0.2)', borderRadius: 4 }}>
                         <div className="flex items-start gap-2.5">
                           <div
-                            className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-terminal font-bold text-xs"
-                            style={{ background: 'rgba(255,180,0,0.15)', color: '#ffb400', marginTop: 1 }}
+                            className="w-7 h-7 flex-shrink-0 flex items-center justify-center font-terminal font-bold text-xs"
+                            style={{ background: 'rgba(241,194,27,0.2)', color: 'var(--cds-support-warning)', marginTop: 1, borderRadius: 2 }}
                           >
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-semibold text-sm" style={{ color: 'var(--color-text-primary)' }}>{c.name}</div>
-                            <div className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)', fontSize: '11px' }}>{c.role}</div>
-                            <div className="text-xs" style={{ color: 'var(--color-text-muted)', lineHeight: 1.55 }}>{c.relevance}</div>
+                            <div className="font-semibold text-sm" style={{ color: 'var(--cds-text-primary)' }}>{c.name}</div>
+                            <div className="text-xs mb-1" style={{ color: 'var(--cds-text-secondary)', fontSize: '11px' }}>{c.role}</div>
+                            <div className="text-xs" style={{ color: 'var(--cds-text-placeholder)', lineHeight: 1.55 }}>{c.relevance}</div>
                           </div>
                         </div>
                       </div>
@@ -342,14 +342,14 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                         href={l.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                        style={{ background: 'rgba(0,170,255,0.05)', border: '1px solid rgba(0,170,255,0.15)', color: 'var(--color-orbit-blue)', textDecoration: 'none' }}
+                        className="flex items-center gap-2 px-3 py-2 transition-all"
+                        style={{ background: 'var(--cds-support-info-bg)', border: '1px solid rgba(69,137,255,0.2)', color: 'var(--ibm-blue-40)', textDecoration: 'none', borderRadius: 4 }}
                       >
-                        <span className="font-terminal text-xs px-1.5 py-0.5 rounded flex-shrink-0"
-                          style={{ background: 'rgba(0,170,255,0.12)', fontSize: '9px' }}>
+                        <span className="font-terminal text-xs px-1.5 py-0.5 flex-shrink-0"
+                          style={{ background: 'rgba(69,137,255,0.15)', fontSize: '9px', borderRadius: 2 }}>
                           {linkTypeLabel[l.type] ?? 'LINK'}
                         </span>
-                        <span className="text-xs flex-1 min-w-0 truncate">{l.label}</span>
+                        <span className="text-xs flex-1 min-w-0 truncate" style={{ color: 'var(--ibm-blue-40)' }}>{l.label}</span>
                         <ExternalLink size={10} style={{ flexShrink: 0, opacity: 0.5 }} />
                       </a>
                     ))}
@@ -360,16 +360,17 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               {/* Revisit warning for flagged nodes */}
               {hasScore && node.score!.nodeColour !== 'green' && (
                 <div
-                  className="p-3 rounded-xl flex items-start gap-2.5"
+                  className="p-3 flex items-start gap-2.5"
                   style={{
-                    background: node.score!.nodeColour === 'red' ? 'rgba(239,68,68,0.07)' : 'rgba(245,158,11,0.07)',
-                    border: `1px solid ${node.score!.nodeColour === 'red' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
+                    background: node.score!.nodeColour === 'red' ? 'var(--cds-support-error-bg)' : 'var(--cds-support-warning-bg)',
+                    border: `1px solid ${node.score!.nodeColour === 'red' ? 'rgba(250,77,86,0.3)' : 'rgba(241,194,27,0.3)'}`,
+                    borderRadius: 4,
                   }}
                 >
                   {node.score!.nodeColour === 'red'
                     ? <AlertTriangle size={14} style={{ color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                     : <RotateCcw size={14} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 1 }} />}
-                  <p className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                  <p className="text-xs" style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                     {node.score!.nodeColour === 'red'
                       ? 'Flagged for revisit. Review the summary and retake.'
                       : 'Review recommended. Retake to improve your score.'}
@@ -389,7 +390,7 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
         {/* ── Sticky quiz CTA ─────────────────────────────────── */}
         <div
           className="px-7 pb-5 pt-3 flex-shrink-0"
-          style={{ borderTop: '1px solid rgba(0,170,255,0.1)' }}
+          style={{ borderTop: '1px solid var(--cds-border-subtle)' }}
         >
           <AnimatePresence mode="wait">
             {showQuizButton || hasScore ? (
@@ -398,13 +399,14 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={onStartQuiz}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-terminal text-sm tracking-widest font-bold transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3.5 font-terminal text-sm tracking-widest font-bold transition-all"
                 style={{
-                  background: hasScore
-                    ? 'linear-gradient(135deg, #2a2a4a, #1a1a32)'
-                    : 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))',
+                  background: hasScore ? 'var(--cds-layer-03)' : 'var(--ibm-blue-60)',
                   color: '#fff',
-                  border: hasScore ? '1px solid rgba(255,255,255,0.12)' : 'none',
+                  border: hasScore
+                    ? '1px solid var(--cds-border-strong)'
+                    : '1px solid var(--cds-border-interactive)',
+                  borderRadius: 4,
                 }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
@@ -417,7 +419,7 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
               </motion.button>
             ) : (
               <motion.div key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-2">
-                <p className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>
+                <p className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '11px' }}>
                   Read through the content above — quiz unlocks as you scroll.
                 </p>
               </motion.div>
