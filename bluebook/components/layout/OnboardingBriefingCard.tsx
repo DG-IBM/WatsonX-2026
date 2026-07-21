@@ -30,7 +30,7 @@ const SECTION = {
 };
 
 export default function OnboardingBriefingCard({ card, userProfile, nodes, onNodeClick }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const handlePrint = () => {
     window.print();

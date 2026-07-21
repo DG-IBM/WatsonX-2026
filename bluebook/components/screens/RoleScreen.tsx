@@ -6,107 +6,8 @@ import { motion } from 'framer-motion';
 import { useBluebookStore } from '@/store/bluebookStore';
 import LoadingSequence from '@/components/ui/LoadingSequence';
 import ParticleBackground from '@/components/ui/ParticleBackground';
-import type { KnowledgeNode, MCPDocument, UserProfile } from '@/types/bluebook';
-
-/** Extract context_id from a Context Studio JWT */
-function extractContextId(apiKey: string): string {
-  try {
-    const payload = apiKey.split('.')[1];
-    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return decoded.contextId ?? decoded.context_id ?? '';
-  } catch { return ''; }
-}
-
-/** Query Context Studio from the browser for a set of broad queries, return docs */
-async function fetchDocsFromContextStudio(
-  url: string,
-  token: string,
-  apiKey: string,
-  roleDescription: string,
-): Promise<MCPDocument[]> {
-  if (!url || !token || !apiKey) return [];
-  const contextId = extractContextId(apiKey);
-  if (!contextId) return [];
-
-  const rawToken = token.replace(/^Bearer\s+/i, '');
-  const queries = [
-    'project overview purpose goals architecture',
-    'team structure roles responsibilities contacts',
-    `${roleDescription.slice(0, 120)} workflows processes`,
-    'risks technical debt deployment testing',
-  ];
-
-  const results = await Promise.allSettled(
-    queries.map(async (query, i) => {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json, text/event-stream',
-          Authorization: `Bearer ${rawToken}`,
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: Date.now() + i,
-          method: 'tools/call',
-          params: {
-            name: 'context-broker-hybrid-query',
-            arguments: {
-              context_id: contextId,
-              AgentPersona: 'OnboardingArchitect',
-              query,
-              sources: ['vector'],
-              vector_params: { top_k: 6 },
-              'x-api-key': apiKey,
-            },
-          },
-        }),
-      });
-      if (!res.ok) return null;
-
-      const contentType = res.headers.get('content-type') ?? '';
-      let result: unknown;
-      if (contentType.includes('text/event-stream')) {
-        const text = await res.text();
-        const lines = text.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
-        if (!lines.length) return null;
-        result = JSON.parse(lines[lines.length - 1].slice('data: '.length));
-      } else {
-        result = await res.json();
-      }
-
-      const content = (result as { result?: { content?: Array<{ text?: string }> } })?.result?.content;
-      if (!Array.isArray(content)) return null;
-      const rawText = content.map((c: { text?: string }) => c.text ?? '').join('\n');
-      if (!rawText.trim()) return null;
-
-      // Parse chunks and join as plain text
-      try {
-        const inner = JSON.parse(rawText) as {
-          items?: { vector?: Array<{ content?: string; metadata?: { title?: string; source_file?: string } }> };
-        };
-        const chunks = (inner.items?.vector ?? [])
-          .map(item => {
-            const title = item.metadata?.title ?? item.metadata?.source_file ?? '';
-            return title ? `[${title}]\n${item.content ?? ''}` : (item.content ?? '');
-          })
-          .filter(Boolean)
-          .join('\n\n');
-        if (!chunks) return null;
-        return { id: `ctx-${i}`, source: 'Context Studio', title: query, content: chunks, metadata: { query } } satisfies MCPDocument;
-      } catch {
-        return { id: `ctx-${i}`, source: 'Context Studio', title: query, content: rawText, metadata: { query } } satisfies MCPDocument;
-      }
-    })
-  );
-
-  const docs: MCPDocument[] = [];
-  for (const r of results) {
-    if (r.status === 'fulfilled' && r.value !== null) {
-      docs.push(r.value);
-    }
-  }
-  return docs;
-}
+import { fetchProjectDocs } from '@/lib/mcpProxy';
+import type { KnowledgeNode, UserProfile } from '@/types/bluebook';
 
 /** Fire-and-forget: enrich one node after the map is shown */
 async function enrichNodeInBackground(
@@ -146,15 +47,19 @@ async function enrichNodeInBackground(
 
 const ROLE_TEMPLATES: Record<string, string> = {
   '+ Frontend Developer':
-    'I am a frontend developer joining mid-sprint. I have 3 years of React experience and will be working on the dashboard module. I report to the tech lead and my primary focus is the data visualisation components.',
+    'I am a frontend developer with 3 years of experience. I am joining this project to contribute to the UI and will need to understand the codebase structure, component patterns, team workflows and any areas I should avoid changing without consultation.',
   '+ Backend Engineer':
-    'I am a backend engineer with 5 years of experience in Node.js and Python. I will be working on the API services and database layer, focusing on performance optimisation and new feature endpoints.',
+    'I am a backend engineer with 5 years of experience. I am joining this project to work on server-side services and will need to understand the system architecture, data flows, APIs, deployment processes and any critical areas of the codebase.',
   '+ Delivery Manager':
-    'I am a delivery manager responsible for sprint planning and stakeholder communication. I have 6 years of agile delivery experience and will be coordinating across frontend, backend and QA teams.',
+    'I am a delivery manager with 6 years of agile experience. I am joining this project to own sprint planning and stakeholder communication and will need to understand the team structure, current priorities, processes, risks and how decisions are made.',
   '+ UX Designer':
-    'I am a UX designer with 4 years of experience in product design. I will be working on user research, wireframing and design system improvements, working closely with the frontend team.',
+    'I am a UX designer with 4 years of product design experience. I am joining this project to contribute to user experience and will need to understand the product vision, existing design patterns, user research, the design system and how design feeds into development.',
   '+ DevOps Engineer':
-    'I am a DevOps engineer joining to improve CI/CD pipelines and cloud infrastructure. I have expertise in Kubernetes, Terraform and AWS and will be owning the deployment and monitoring stack.',
+    'I am a DevOps engineer joining to own the deployment and infrastructure side of this project. I will need to understand the current CI/CD setup, cloud infrastructure, monitoring, incident response processes and any platform constraints.',
+  '+ QA Engineer':
+    'I am a QA engineer with 3 years of testing experience. I am joining this project to own quality assurance and will need to understand the testing strategy, existing test coverage, release processes, known defects and acceptance criteria standards.',
+  '+ Data Analyst':
+    'I am a data analyst with 4 years of experience. I am joining this project to support data-driven decisions and will need to understand the data sources, reporting tools, existing metrics, data governance policies and key stakeholders who consume my work.',
 };
 
 export default function RoleScreen() {
@@ -179,13 +84,21 @@ export default function RoleScreen() {
     resetForNewSession();
     setLoading(true, 'Fetching project knowledge...');
 
-    // Fetch docs client-side (browser can reach MCP; server-side Node cannot)
-    const fetchedDocs = await fetchDocsFromContextStudio(
+    // Fetch docs via same-origin proxy (avoids CORS + server-side network blocks)
+    const fetchedDocs = await fetchProjectDocs(
       mcpConnection.url,
       mcpConnection.token,
-      mcpConnection.apiKey,
+      mcpConnection.apiKey ?? '',
       roleText,
     );
+
+    console.log(`[RoleScreen] fetchedDocs=${fetchedDocs.length} url="${mcpConnection.url}" apiKey=${mcpConnection.apiKey ? 'present' : 'MISSING'}`);
+
+    if (fetchedDocs.length === 0 && mcpConnection.url) {
+      // MCP is connected but we got no docs — likely missing API key or network issue
+      console.warn('[RoleScreen] No docs fetched from MCP. Map will be generated without project context.');
+    }
+
     const docsToUse = fetchedDocs.length > 0 ? fetchedDocs : mcpDocuments;
     if (fetchedDocs.length > 0) setMCPDocuments(fetchedDocs);
 
@@ -341,7 +254,7 @@ export default function RoleScreen() {
                       value={roleText}
                       onChange={(e) => setRoleText(e.target.value.slice(0, 500))}
                       rows={7}
-                      placeholder="Example: I am a frontend developer joining mid-sprint. I have 3 years of React experience and will be working on the dashboard module. I report to James Chen."
+                      placeholder="Describe your role, experience level, and what you'll be working on. The more context you give, the more tailored your knowledge map will be."
                       className="w-full px-4 py-3 text-sm resize-none outline-none leading-relaxed"
                       style={{
                         background: 'var(--cds-layer-01)',

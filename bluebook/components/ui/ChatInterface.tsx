@@ -8,86 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import CommanderAvatar from './CommanderAvatar';
 import type { ChatMessage, UserProfile, KnowledgeNode, MCPDocument } from '@/types/bluebook';
 import { useEffect } from 'react';
-
-/** Extract context_id from a Context Studio JWT (client-side, no verification needed) */
-function extractContextId(apiKey: string): string {
-  try {
-    const payload = apiKey.split('.')[1];
-    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return decoded.contextId ?? decoded.context_id ?? '';
-  } catch {
-    return '';
-  }
-}
-
-/** Query Context Studio directly from the browser — avoids server-side network issues */
-async function clientQueryContextBroker(
-  question: string,
-  url: string,
-  token: string,
-  apiKey: string,
-): Promise<string> {
-  if (!url || !token || !apiKey) return '';
-  const contextId = extractContextId(apiKey);
-  if (!contextId) return '';
-
-  const rawToken = token.replace(/^Bearer\s+/i, '');
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json, text/event-stream',
-        Authorization: `Bearer ${rawToken}`,
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: 'context-broker-hybrid-query',
-          arguments: {
-            context_id: contextId,
-            AgentPersona: 'OnboardingAssistant',
-            query: question,
-            sources: ['vector'],
-            vector_params: { top_k: 8 },
-            'x-api-key': apiKey,
-          },
-        },
-      }),
-    });
-
-    if (!res.ok) return '';
-
-    const contentType = res.headers.get('content-type') ?? '';
-    let result: unknown;
-
-    if (contentType.includes('text/event-stream')) {
-      const text = await res.text();
-      const lines = text.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
-      if (!lines.length) return '';
-      result = JSON.parse(lines[lines.length - 1].slice('data: '.length));
-    } else {
-      result = await res.json();
-    }
-
-    const content = (result as { result?: { content?: Array<{ text?: string }> } })?.result?.content;
-    if (!Array.isArray(content)) return '';
-    const rawText = content.map((c: { text?: string }) => c.text ?? '').join('\n');
-
-    // Parse inner JSON payload
-    const inner = JSON.parse(rawText) as {
-      items?: { vector?: Array<{ content?: string; metadata?: { title?: string } }> };
-    };
-    return (inner.items?.vector ?? [])
-      .map(item => item.metadata?.title ? `[${item.metadata.title}]\n${item.content ?? ''}` : (item.content ?? ''))
-      .filter(Boolean)
-      .join('\n\n---\n\n');
-  } catch {
-    return '';
-  }
-}
+import { queryForChat } from '@/lib/mcpProxy';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -158,8 +79,8 @@ export default function ChatInterface({
     setStreamingText('');
 
     try {
-      // Query Context Studio from the browser (avoids server-side network restrictions)
-      const liveKnowledge = await clientQueryContextBroker(text, mcpUrl ?? '', mcpToken ?? '', mcpApiKey ?? '');
+      // Query Context Studio via the same-origin proxy (avoids CORS on direct browser fetch)
+      const liveKnowledge = await queryForChat(mcpUrl ?? '', mcpToken ?? '', mcpApiKey ?? '', text);
 
       const res = await fetch('/api/llm/chat', {
         method: 'POST',

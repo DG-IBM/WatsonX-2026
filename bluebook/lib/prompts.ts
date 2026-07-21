@@ -27,7 +27,7 @@ PROJECT KNOWLEDGE BASE (excerpts):
 ${docSummary}
 
 YOUR TASK:
-Identify 6 to 10 topic areas this person needs to understand. For each topic produce only a short title and one-sentence description. Do NOT write summaries, quiz questions, or contacts yet — those come later.
+Identify 8 to 18 topic areas this person needs to understand. Cover the full breadth of what is relevant to their role — do not stop early. For each topic produce only a short title and one-sentence description. Do NOT write summaries, quiz questions, or contacts yet — those come later.
 
 RESPOND WITH THIS EXACT JSON (nothing else):
 {
@@ -61,7 +61,8 @@ RESPOND WITH THIS EXACT JSON (nothing else):
 }
 
 RULES:
-- 6 to 10 nodes, each with a specific project-relevant title
+- 8 to 18 nodes — always produce at least 8
+- Each node must have a distinct, specific title relevant to this project and role — no generic filler
 - suggestedPath must list all node titles in recommended reading order
 - keyContacts: only include people actually named in the documents
 - color: blue/purple for architecture, red/dark for risks, teal/green for process, amber for product`;

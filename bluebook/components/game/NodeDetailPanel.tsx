@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, BookOpen, Target, Users, Link2, FileText,
+  X, BookOpen, Target, Users, FileText,
   ChevronDown, ChevronUp, AlertTriangle, RotateCcw,
-  CheckCircle, ExternalLink, Hash
+  CheckCircle, Hash
 } from 'lucide-react';
 import type { KnowledgeNode } from '@/types/bluebook';
 
@@ -32,21 +32,54 @@ const SECTION_LABEL = (
   </div>
 );
 
+// A node is enriched once the LLM has filled in its content.
+// The skeleton from the architect only has a one-sentence description and empty arrays.
+function isNodeEnriched(node: KnowledgeNode): boolean {
+  return node.keyTakeaways.length > 0 || !!node.roleRelevance;
+}
+
+// Animated shimmer skeleton block
+function SkeletonBlock({ width = '100%', height = 16 }: { width?: string | number; height?: number }) {
+  return (
+    <div
+      style={{
+        width,
+        height,
+        borderRadius: 2,
+        background: 'var(--cds-layer-03)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <motion.div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%)',
+        }}
+        animate={{ x: ['-100%', '100%'] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
+      />
+    </div>
+  );
+}
+
 export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDetailPanelProps) {
   const [sourcesOpen, setSourcesOpen] = useState(node.sources.length > 0);
   const [showQuizButton, setShowQuizButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const hasScore = node.score !== null;
+  const enriched = isNodeEnriched(node);
 
-  // Show quiz button after 20 seconds or near-bottom scroll
+  // Show quiz button after 20 seconds or near-bottom scroll — only once enriched
   useEffect(() => {
     setShowQuizButton(hasScore); // immediately show if retaking
-    if (!hasScore) {
+    if (!hasScore && enriched) {
       timerRef.current = setTimeout(() => setShowQuizButton(true), 20000);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [node.id, hasScore]);
+  }, [node.id, hasScore, enriched]);
 
   const handleScroll = () => {
     const el = scrollRef.current;
@@ -61,10 +94,6 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
       ? { color: 'var(--cds-support-warning)', bg: 'var(--cds-support-warning-bg)', border: 'rgba(241,194,27,0.3)' }
       : { color: 'var(--cds-support-error)', bg: 'var(--cds-support-error-bg)', border: 'rgba(250,77,86,0.3)' }
     : null;
-
-  const linkTypeLabel: Record<string, string> = {
-    document: 'DOC', ticket: 'TICKET', repo: 'REPO', confluence: 'WIKI', other: 'LINK',
-  };
 
   return (
     <div
@@ -180,6 +209,28 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                 </div>
               )}
 
+              {/* ── Loading skeleton shown until enrichment arrives ── */}
+              {!enriched ? (
+                <section className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-2 h-2 animate-pulse-glow" style={{ background: 'var(--ibm-blue-40)', borderRadius: 1 }} />
+                    <span className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '11px' }}>
+                      GENERATING CONTENT...
+                    </span>
+                  </div>
+                  <SkeletonBlock height={14} width="90%" />
+                  <SkeletonBlock height={14} width="100%" />
+                  <SkeletonBlock height={14} width="75%" />
+                  <SkeletonBlock height={14} width="85%" />
+                  <SkeletonBlock height={14} width="60%" />
+                  <div className="flex flex-col gap-2 mt-2">
+                    <SkeletonBlock height={44} />
+                    <SkeletonBlock height={44} />
+                    <SkeletonBlock height={44} />
+                  </div>
+                </section>
+              ) : (
+                <>
               {/* Summary */}
               <section>
                 {SECTION_LABEL(<BookOpen size={13} />, 'OVERVIEW')}
@@ -300,6 +351,8 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                   )}
                 </AnimatePresence>
               </section>
+                </>
+              )}
             </div>
 
             {/* RIGHT COLUMN — context (1/3) */}
@@ -326,32 +379,6 @@ export default function NodeDetailPanel({ node, onClose, onStartQuiz }: NodeDeta
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Links */}
-              {node.links.length > 0 && (
-                <section>
-                  {SECTION_LABEL(<Link2 size={13} />, 'REFERENCES')}
-                  <div className="flex flex-col gap-1.5">
-                    {node.links.map((l, i) => (
-                      <a
-                        key={i}
-                        href={l.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 transition-all"
-                        style={{ background: 'var(--cds-support-info-bg)', border: '1px solid rgba(69,137,255,0.2)', color: 'var(--ibm-blue-40)', textDecoration: 'none', borderRadius: 4 }}
-                      >
-                        <span className="font-terminal text-xs px-1.5 py-0.5 flex-shrink-0"
-                          style={{ background: 'rgba(69,137,255,0.15)', fontSize: '9px', borderRadius: 2 }}>
-                          {linkTypeLabel[l.type] ?? 'LINK'}
-                        </span>
-                        <span className="text-xs flex-1 min-w-0 truncate" style={{ color: 'var(--ibm-blue-40)' }}>{l.label}</span>
-                        <ExternalLink size={10} style={{ flexShrink: 0, opacity: 0.5 }} />
-                      </a>
                     ))}
                   </div>
                 </section>
