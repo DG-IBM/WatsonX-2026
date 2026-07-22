@@ -4,100 +4,6 @@ import { buildArchitectPrompt, ARCHITECT_SYSTEM } from '@/lib/prompts';
 import type { MCPDocument, KnowledgeNode, UserProfile, OnboardingBriefingCard } from '@/types/bluebook';
 import { v4 as uuidv4 } from 'uuid';
 
-const MCP_URL     = process.env.NEXT_PUBLIC_MCP_URL ?? '';
-const MCP_TOKEN   = process.env.NEXT_PUBLIC_MCP_TOKEN ?? '';
-const MCP_API_KEY = process.env.NEXT_PUBLIC_MCP_API_KEY ?? '';
-const CONTEXT_ID  = process.env.NEXT_PUBLIC_CONTEXT_ID ?? '';
-
-/** Query Context Studio via tools/call and return raw text */
-async function queryContextStudio(query: string): Promise<string> {
-  if (!MCP_URL || !MCP_TOKEN || !CONTEXT_ID) return '';
-
-  try {
-    const res = await fetch(MCP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json, text/event-stream',
-        Authorization: `Bearer ${MCP_TOKEN}`,
-        ...(MCP_API_KEY ? { 'x-api-key': MCP_API_KEY } : {}),
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method: 'tools/call',
-        params: {
-          name: 'context-broker-hybrid-query',
-          arguments: {
-            context_id: CONTEXT_ID,
-            AgentPersona: 'OnboardingArchitect',
-            query,
-            sources: ['graph', 'vector'],
-            vector_params: { top_k: 8 },
-            graph_params: { max_depth: 1, limit: 4 },
-          },
-        },
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (!res.ok) return '';
-
-    const contentType = res.headers.get('content-type') ?? '';
-
-    if (contentType.includes('text/event-stream')) {
-      const text = await res.text();
-      const lines = text.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
-      if (!lines.length) return '';
-      const last = lines[lines.length - 1].slice('data: '.length);
-      const json = JSON.parse(last);
-      const content = json?.result?.content;
-      if (Array.isArray(content)) return content.map((c: { text?: string }) => c.text ?? '').join('\n');
-      return typeof content === 'string' ? content : '';
-    }
-
-    const json = await res.json();
-    const content = json?.result?.content;
-    if (Array.isArray(content)) return content.map((c: { text?: string }) => c.text ?? '').join('\n');
-    return typeof content === 'string' ? content : '';
-  } catch {
-    return '';
-  }
-}
-
-/** Fetch project knowledge — 4 broad queries run in parallel */
-async function fetchDocumentsFromContextStudio(roleDescription: string): Promise<MCPDocument[]> {
-  const queries = [
-    'project overview purpose goals architecture',
-    'team structure roles responsibilities contacts',
-    `${roleDescription.slice(0, 120)} workflows processes`,
-    'risks technical debt deployment testing',
-  ];
-
-  const results = await Promise.allSettled(queries.map(q => queryContextStudio(q)));
-
-  const documents: MCPDocument[] = [];
-  const seen = new Set<string>();
-
-  results.forEach((result, i) => {
-    if (result.status === 'fulfilled' && result.value.trim()) {
-      const content = result.value.trim();
-      if (!seen.has(content)) {
-        seen.add(content);
-        documents.push({
-          id: `ctx-${i}`,
-          source: 'Context Studio',
-          title: queries[i],
-          content,
-          metadata: { query: queries[i] },
-        });
-      }
-    }
-  });
-
-  return documents;
-}
-
 const DEFAULT_COLORS = [
   '#4a9eff', '#9b59b6', '#00b894', '#f4a460',
   '#cc3300', '#1a6b8a', '#ffb400', '#e74c3c',
@@ -146,11 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'roleDescription is required' }, { status: 400 });
     }
 
-    // Fetch docs (parallel, fast)
-    let documents: MCPDocument[] = providedDocs ?? [];
-    if (documents.length === 0) {
-      documents = await fetchDocumentsFromContextStudio(roleDescription);
-    }
+    // Documents are fetched client-side and passed in — no server-side MCP needed
+    const documents: MCPDocument[] = providedDocs ?? [];
 
     // Phase 1 — skeleton only (~2,000 output tokens)
     const userPrompt = buildArchitectPrompt(roleDescription, documents);

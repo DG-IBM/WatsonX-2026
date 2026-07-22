@@ -20,45 +20,46 @@ export default function Sun() {
 
   return (
     <group>
-      {/* Core sun */}
+      {/* Core — IBM Blue node hub */}
       <mesh ref={meshRef}>
         <sphereGeometry args={[2.5, 32, 32]} />
         <meshStandardMaterial
-          color="#ff9900"
-          emissive="#ff6600"
-          emissiveIntensity={1.5}
-          roughness={0.4}
+          color="#0f62fe"
+          emissive="#4589ff"
+          emissiveIntensity={0.6}
+          roughness={0.3}
+          metalness={0.4}
         />
       </mesh>
 
-      {/* Outer glow atmosphere */}
+      {/* Outer subtle atmosphere */}
       <mesh scale={1.2}>
         <sphereGeometry args={[2.5, 32, 32]} />
         <meshStandardMaterial
-          color="#ff6600"
-          emissive="#ff4400"
-          emissiveIntensity={0.8}
+          color="#4589ff"
+          emissive="#0f62fe"
+          emissiveIntensity={0.3}
           transparent
-          opacity={0.15}
+          opacity={0.1}
           side={THREE.BackSide}
         />
       </mesh>
 
-      {/* Point light from sun */}
-      <pointLight color="#fff4e0" intensity={3} distance={50} decay={2} />
+      {/* Point light — neutral white-blue */}
+      <pointLight color="#c8d8ff" intensity={2} distance={50} decay={2} />
 
       {/* HTML label */}
       <Html center position={[0, 3.5, 0]} distanceFactor={12}>
         <div
           style={{
-            fontFamily: "'Space Mono', monospace",
+            fontFamily: "'IBM Plex Mono', monospace",
             fontSize: '9px',
-            color: '#ffd700',
+            color: '#78a9ff',
             letterSpacing: '2px',
-            background: 'rgba(2,4,8,0.7)',
+            background: 'rgba(22,22,22,0.85)',
             padding: '2px 8px',
             borderRadius: '4px',
-            border: '1px solid rgba(255,215,0,0.3)',
+            border: '1px solid rgba(69,137,255,0.35)',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
           }}

@@ -35,8 +35,8 @@ export default function PlanetModal({
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full transition-all z-10"
-            style={{ background: 'rgba(0,170,255,0.08)', border: '1px solid rgba(0,170,255,0.2)', color: 'var(--color-text-secondary)' }}
+            className="absolute top-4 right-4 p-2 transition-all z-10"
+            style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', color: 'var(--cds-text-secondary)', borderRadius: 4 }}
           >
             <X size={16} />
           </button>

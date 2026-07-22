@@ -30,21 +30,19 @@ export default function TerminalInput({
     <div className="flex flex-col gap-1">
       <label
         className="font-terminal text-xs tracking-widest"
-        style={{ color: 'var(--color-text-terminal)', fontSize: '11px' }}
+        style={{ color: 'var(--cds-text-secondary)', fontSize: '11px' }}
       >
         {label}
       </label>
       <div
-        className="relative flex items-center rounded"
+        className="relative flex items-center"
         style={{
-          background: 'var(--color-panel)',
+          background: 'var(--cds-layer-01)',
           border: focused
-            ? '1px solid var(--color-text-terminal)'
-            : '1px solid rgba(0,255,136,0.3)',
-          boxShadow: focused
-            ? '0 0 12px rgba(0,255,136,0.2), inset 0 0 12px rgba(0,255,136,0.05)'
-            : 'none',
-          transition: 'border-color 0.2s, box-shadow 0.2s',
+            ? '2px solid var(--cds-border-interactive)'
+            : '1px solid var(--cds-border-subtle)',
+          transition: 'border-color 0.15s',
+          borderRadius: 4,
         }}
       >
         <input
@@ -58,8 +56,8 @@ export default function TerminalInput({
           onBlur={() => setFocused(false)}
           className="w-full px-4 py-3 bg-transparent font-terminal text-sm outline-none"
           style={{
-            color: 'var(--color-text-terminal)',
-            fontFamily: "'Space Mono', monospace",
+            color: 'var(--cds-text-primary)',
+            fontFamily: "'IBM Plex Mono', monospace",
           }}
         />
         {focused && value.length === 0 && (
@@ -69,7 +67,7 @@ export default function TerminalInput({
               left: '16px',
               width: '2px',
               height: '16px',
-              background: 'var(--color-text-terminal)',
+              background: 'var(--ibm-blue-40)',
               opacity: 0.8,
             }}
           />
@@ -78,7 +76,7 @@ export default function TerminalInput({
           <button
             type="button"
             className="absolute right-3 p-1 opacity-60 hover:opacity-100 transition-opacity"
-            style={{ color: 'var(--color-text-terminal)' }}
+            style={{ color: 'var(--cds-icon-secondary)' }}
             onClick={() => setShowPassword((s) => !s)}
             tabIndex={-1}
           >

@@ -32,7 +32,6 @@ export default function MissionCompleteScreen() {
   const rank = astronautRank ?? 'Not Started';
 
   useEffect(() => {
-    // Cinematic sequence
     const t1 = setTimeout(() => setCinematicText('complete'), 1500);
     const t2 = setTimeout(() => {
       setStep('rank');
@@ -42,7 +41,6 @@ export default function MissionCompleteScreen() {
   }, []);
 
   useEffect(() => {
-    // Auto-generate briefing card if not already done
     if (step === 'rank' && !missionBriefingCard && !isGenerating && userProfile) {
       generateBriefingCard();
     }
@@ -61,9 +59,8 @@ export default function MissionCompleteScreen() {
       const data = await res.json();
       setMissionBriefingCard(data.briefingCard as MissionBriefingCard);
     } catch {
-      // Fallback briefing card
       setMissionBriefingCard({
-        projectSnapshot: 'You have completed all mission sectors and gained a comprehensive understanding of the project.',
+        projectSnapshot: 'You have completed all knowledge areas and gained a comprehensive understanding of the project.',
         roleAndOwnership: `As a ${userProfile?.parsedRole ?? 'team member'}, you are now equipped to make meaningful contributions.`,
         topPriorities: ['Establish your first sprint contribution', 'Connect with key stakeholders', 'Review open pull requests'],
         topRisks: ['Potential knowledge gaps in undocumented areas', 'Team dependencies to navigate', 'Technical debt in legacy modules'],
@@ -76,13 +73,16 @@ export default function MissionCompleteScreen() {
     }
   };
 
-  const handleEnterMissionControl = () => {
+  const handleEnterChat = () => {
     setCurrentScreen('mission-control');
     router.push('/mission-control');
   };
 
   return (
-    <div className="relative min-h-screen" style={{ background: 'var(--color-void)' }}>
+    <div
+      className="relative min-h-screen"
+      style={{ background: 'var(--cds-background)' }}
+    >
       <ParticleBackground />
 
       {/* Cinematic overlay */}
@@ -94,31 +94,46 @@ export default function MissionCompleteScreen() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
             className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ background: 'var(--color-void)' }}
+            style={{ background: 'var(--cds-background)' }}
           >
             <AnimatePresence mode="wait">
               {cinematicText === 'mapping' && (
-                <motion.h1
+                <motion.div
                   key="mapping"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.1 }}
-                  className="text-4xl font-bold tracking-widest"
-                  style={{ color: 'var(--color-orbit-blue)' }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center"
                 >
-                  ALL SECTORS MAPPED
-                </motion.h1>
+                  <p className="font-terminal text-xs tracking-widest mb-2" style={{ color: 'var(--cds-text-placeholder)' }}>
+                    IBM BLUEBOOK
+                  </p>
+                  <h1
+                    className="text-4xl font-bold tracking-widest"
+                    style={{ color: 'var(--ibm-blue-40)', letterSpacing: '0.1em' }}
+                  >
+                    ALL TOPICS VERIFIED
+                  </h1>
+                </motion.div>
               )}
               {cinematicText === 'complete' && (
-                <motion.h1
+                <motion.div
                   key="complete"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-5xl font-bold tracking-widest text-gradient-gold"
+                  className="text-center"
                 >
-                  MISSION COMPLETE
-                </motion.h1>
+                  <p className="font-terminal text-xs tracking-widest mb-2" style={{ color: 'var(--cds-text-placeholder)' }}>
+                    IBM BLUEBOOK
+                  </p>
+                  <h1
+                    className="text-5xl font-bold tracking-widest"
+                    style={{ color: 'var(--cds-support-warning)', letterSpacing: '0.08em' }}
+                  >
+                    ONBOARDING COMPLETE
+                  </h1>
+                </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
@@ -142,14 +157,16 @@ export default function MissionCompleteScreen() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 }}
                 onClick={() => setStep('briefing')}
-                className="px-8 py-3 rounded-xl font-terminal text-sm tracking-widest transition-all"
+                className="px-8 py-3 font-terminal text-sm tracking-widest transition-all"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))',
+                  background: 'var(--ibm-blue-60)',
+                  border: '1px solid var(--cds-border-interactive)',
                   color: '#fff',
+                  borderRadius: 4,
                 }}
-                whileHover={{ scale: 1.03, boxShadow: '0 0 20px rgba(0,170,255,0.4)' }}
+                whileHover={{ scale: 1.01 }}
               >
-                VIEW MISSION BRIEFING CARD →
+                VIEW KNOWLEDGE BRIEFING CARD →
               </motion.button>
             </motion.div>
           )}
@@ -164,17 +181,22 @@ export default function MissionCompleteScreen() {
               <div className="text-center">
                 <p
                   className="font-terminal text-xs tracking-widest mb-2"
-                  style={{ color: 'var(--color-text-muted)' }}
+                  style={{ color: 'var(--cds-text-placeholder)' }}
                 >
-                  MISSION DOSSIER GENERATED
+                  KNOWLEDGE DOSSIER GENERATED
                 </p>
-                <h2 className="text-3xl font-bold text-gradient-gold">YOUR MISSION BRIEFING</h2>
+                <h2
+                  className="text-3xl font-bold"
+                  style={{ color: 'var(--cds-support-warning)' }}
+                >
+                  YOUR BLUEBOOK BRIEFING
+                </h2>
               </div>
 
               {isGenerating ? (
                 <LoadingSequence
                   isVisible={true}
-                  messages={['Compiling mission dossier...', 'Synthesising project intelligence...', 'Generating your briefing card...']}
+                  messages={['Compiling knowledge dossier...', 'Synthesising project intelligence...', 'Generating your briefing card...']}
                 />
               ) : missionBriefingCard ? (
                 <MissionBriefingCardView
@@ -188,15 +210,17 @@ export default function MissionCompleteScreen() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                onClick={handleEnterMissionControl}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-terminal text-sm tracking-widest font-bold"
+                onClick={handleEnterChat}
+                className="w-full flex items-center justify-center gap-2 py-4 font-terminal text-sm tracking-widest font-bold"
                 style={{
-                  background: 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))',
+                  borderRadius: 4,
+                  background: 'var(--ibm-blue-60)',
+                  border: '1px solid var(--cds-border-interactive)',
                   color: '#fff',
                 }}
-                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(0,170,255,0.4)' }}
+                whileHover={{ scale: 1.01 }}
               >
-                ENTER MISSION CONTROL →
+                OPEN KNOWLEDGE ASSISTANT →
               </motion.button>
             </motion.div>
           )}

@@ -100,6 +100,7 @@ const initialState: BluebookState = {
   mcpConnection: {
     url: '',
     token: '',
+    apiKey: '',
     status: 'idle',
     documentCount: 0,
     sources: [],
@@ -286,7 +287,7 @@ export const useBluebookStore = create<BluebookState & BluebookActions>()(
         chatMessages: state.chatMessages,
         currentScreen: state.currentScreen,
       }),
-      // On rehydrate, sync planets alias and recompute score
+      // On rehydrate, sync planets alias, recompute score, and migrate missing fields
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.planets = state.nodes;
@@ -294,6 +295,10 @@ export const useBluebookStore = create<BluebookState & BluebookActions>()(
           state.selectedNodeId = null;
           state.activePlanetId = null;
           state.activePlanetPhase = null;
+          // Migration: apiKey added after initial release — default to '' if missing
+          if (!state.mcpConnection.apiKey) {
+            state.mcpConnection.apiKey = '';
+          }
         }
       },
     }

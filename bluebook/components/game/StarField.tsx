@@ -4,13 +4,14 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
+// IBM Carbon background — sparse, very dim dots instead of stars
 export default function StarField() {
   const pointsRef = useRef<THREE.Points>(null);
 
-  // Generate 2000 random star positions
+  // Fewer, dimmer points — subtle depth cue, not a star field
   const positions = useMemo(() => {
-    const arr = new Float32Array(2000 * 3);
-    for (let i = 0; i < 2000; i++) {
+    const arr = new Float32Array(600 * 3);
+    for (let i = 0; i < 600; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       const r = 100 + Math.random() * 50;
@@ -23,7 +24,7 @@ export default function StarField() {
 
   useFrame((_, delta) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y += delta * 0.005;
+      pointsRef.current.rotation.y += delta * 0.002;
     }
   });
 
@@ -36,10 +37,10 @@ export default function StarField() {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#ffffff"
-        size={0.15}
+        color="#393939"
+        size={0.18}
         transparent
-        opacity={0.8}
+        opacity={0.55}
         sizeAttenuation
       />
     </points>

@@ -3,8 +3,8 @@ import '../styles/globals.css';
 import AppShell from '@/components/layout/AppShell';
 
 export const metadata: Metadata = {
-  title: 'ORBIT — AI-Powered Project Onboarding',
-  description: 'Gamified AI onboarding that maps your project into an explorable solar system.',
+  title: 'IBM Bluebook — AI-Powered Project Onboarding',
+  description: 'AI-powered onboarding that maps your project into an explorable knowledge graph.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

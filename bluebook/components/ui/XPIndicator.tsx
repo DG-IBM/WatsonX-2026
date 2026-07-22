@@ -26,9 +26,8 @@ export default function XPIndicator({ amount, show, onComplete }: XPIndicatorPro
           transition={{ duration: 1.5, times: [0, 0.3, 0.7, 1] }}
           className="pointer-events-none fixed top-1/3 left-1/2 z-50 font-terminal font-bold text-2xl"
           style={{
-            color: 'var(--color-gold)',
+            color: 'var(--cds-support-warning)',
             transform: 'translateX(-50%)',
-            textShadow: '0 0 20px var(--color-gold)',
           }}
         >
           +{amount} XP

@@ -43,23 +43,23 @@ function layout(nodes: KnowledgeNode[]): { placed: LayoutNode[]; width: number; 
   return { placed, width, height };
 }
 
-// ─── Status colours ───────────────────────────────────────────────────────────
+// ─── Status colours (IBM Carbon tokens) ──────────────────────────────────────
 function nodeColors(node: KnowledgeNode) {
   if (node.status === 'complete') {
     const c = node.score?.nodeColour;
-    if (c === 'green')  return { fill: '#0d2e1a', border: '#22c55e', text: '#86efac', glow: '#22c55e' };
-    if (c === 'red')    return { fill: '#2d0f0f', border: '#ef4444', text: '#fca5a5', glow: '#ef4444' };
-                        return { fill: '#2a1f06', border: '#f59e0b', text: '#fcd34d', glow: '#f59e0b' };
+    if (c === 'green')  return { fill: '#0e1f14', border: '#42be65', text: '#6fdc8c', glow: '#42be65' };
+    if (c === 'red')    return { fill: '#1f0a0b', border: '#fa4d56', text: '#ff8389', glow: '#fa4d56' };
+                        return { fill: '#1e1500', border: '#f1c21b', text: '#f6d860', glow: '#f1c21b' };
   }
   if (node.status === 'reading') {
-    return { fill: '#06131f', border: '#00aaff', text: '#7dd3fc', glow: '#00aaff' };
+    return { fill: '#131b2e', border: '#4589ff', text: '#a6c8ff', glow: '#4589ff' };
   }
   // Skeleton = untouched with no summary yet
   const isSkeleton = !node.summary;
   if (isSkeleton) {
-    return { fill: '#080f1a', border: 'rgba(0,170,255,0.12)', text: 'rgba(122,172,204,0.4)', glow: 'none' };
+    return { fill: '#1c1c1c', border: '#393939', text: '#525252', glow: 'none' };
   }
-  return { fill: '#0a1628', border: 'rgba(0,170,255,0.22)', text: '#7aaccc', glow: 'none' };
+  return { fill: '#282828', border: '#4589ff', text: '#78a9ff', glow: 'none' };
 }
 
 // ─── Path between nodes ───────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
   if (nodes.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <p className="font-terminal text-xs" style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>
+        <p className="font-terminal text-xs" style={{ color: 'var(--cds-text-placeholder)', fontSize: '11px' }}>
           No knowledge nodes loaded yet.
         </p>
       </div>
@@ -118,19 +118,8 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
   return (
     <div
       className="w-full h-full flex items-center justify-center overflow-auto no-print"
-      style={{ background: 'var(--color-void)' }}
+      style={{ background: 'var(--cds-background)' }}
     >
-      {/* Subtle grid background */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(0,170,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,170,255,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px',
-        }}
-      />
 
       <svg
         ref={svgRef}
@@ -155,13 +144,13 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
           </filter>
           {/* Arrow marker */}
           <marker id="arrow-dim" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,170,255,0.2)" />
+            <path d="M0,0 L0,6 L6,3 z" fill="#393939" />
           </marker>
           <marker id="arrow-active" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="rgba(0,170,255,0.6)" />
+            <path d="M0,0 L0,6 L6,3 z" fill="#4589ff" />
           </marker>
           <marker id="arrow-done" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill="#22c55e" />
+            <path d="M0,0 L0,6 L6,3 z" fill="#42be65" />
           </marker>
         </defs>
 
@@ -171,11 +160,11 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
             key={e.key}
             d={e.path}
             fill="none"
-            stroke={e.completed ? '#22c55e' : 'rgba(0,170,255,0.2)'}
+            stroke={e.completed ? '#42be65' : '#393939'}
             strokeWidth={e.completed ? 1.5 : 1}
             strokeDasharray={e.completed ? 'none' : '4 4'}
             markerEnd={e.completed ? 'url(#arrow-done)' : 'url(#arrow-dim)'}
-            opacity={0.7}
+            opacity={0.8}
           />
         ))}
 
@@ -210,8 +199,8 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
                 y={y}
                 width={NODE_W}
                 height={NODE_H}
-                rx={10}
-                ry={10}
+                rx={4}
+                ry={4}
                 fill={colors.fill}
                 stroke={isSelected ? '#ffffff' : colors.border}
                 strokeWidth={isSelected ? 2 : 1.5}
@@ -233,7 +222,7 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
                 x={x + 12}
                 y={y + 14}
                 fontSize={9}
-                fontFamily="'Space Mono', monospace"
+                fontFamily="'IBM Plex Mono', monospace"
                 fill={colors.border}
                 opacity={0.7}
               >
@@ -246,7 +235,7 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
                   x={x + NODE_W - 8}
                   y={y + 14}
                   fontSize={9}
-                  fontFamily="'Space Mono', monospace"
+                  fontFamily="'IBM Plex Mono', monospace"
                   fill={colors.border}
                   textAnchor="end"
                 >
@@ -263,7 +252,7 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
                   height={NODE_H + 6}
                   rx={13}
                   fill="none"
-                  stroke="#00aaff"
+                  stroke="#4589ff"
                   strokeWidth={1}
                   opacity={0.35}
                   strokeDasharray="3 3"
@@ -297,7 +286,7 @@ export default function NodeMap({ nodes, selectedNodeId, onNodeClick }: NodeMapP
                     textAnchor="middle"
                     fontSize={11}
                     fontWeight={600}
-                    fontFamily="'Space Grotesk', system-ui, sans-serif"
+                    fontFamily="'IBM Plex Sans', system-ui, sans-serif"
                     fill={colors.text}
                   >
                     {line}

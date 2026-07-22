@@ -23,6 +23,7 @@ export type ReadinessLevel =
 export interface MCPConnection {
   url: string;
   token: string;
+  apiKey: string;       // Context Studio API key (separate from MCP gateway JWT)
   status: 'idle' | 'connecting' | 'connected' | 'failed';
   documentCount: number;
   sources: MCPSource[];

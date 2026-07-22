@@ -70,43 +70,47 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
   const optionStyle = (optId: string) => {
     if (selectedAnswer === null) {
       return {
-        background: 'rgba(0,170,255,0.05)',
-        border: '1px solid rgba(0,170,255,0.2)',
-        color: 'var(--color-text-primary)',
+        background: 'var(--cds-layer-03)',
+        border: '1px solid var(--cds-border-subtle)',
+        color: 'var(--cds-text-primary)',
         cursor: 'pointer',
+        borderRadius: 4,
       } as React.CSSProperties;
     }
     if (optId === current.correctOptionId) {
       return {
-        background: 'rgba(34,197,94,0.12)',
-        border: '2px solid rgba(34,197,94,0.6)',
-        color: '#22c55e',
+        background: 'var(--cds-support-success-bg)',
+        border: '2px solid rgba(66,190,101,0.6)',
+        color: 'var(--cds-support-success)',
         cursor: 'default',
+        borderRadius: 4,
       } as React.CSSProperties;
     }
     if (optId === selectedAnswer) {
       return {
-        background: 'rgba(239,68,68,0.12)',
-        border: '2px solid rgba(239,68,68,0.5)',
-        color: '#ef4444',
+        background: 'var(--cds-support-error-bg)',
+        border: '2px solid rgba(250,77,86,0.5)',
+        color: 'var(--cds-support-error)',
         cursor: 'default',
+        borderRadius: 4,
       } as React.CSSProperties;
     }
     return {
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      color: 'var(--color-text-muted)',
+      background: 'var(--cds-layer-01)',
+      border: '1px solid var(--cds-border-subtle)',
+      color: 'var(--cds-text-placeholder)',
       cursor: 'default',
       opacity: 0.55,
+      borderRadius: 4,
     } as React.CSSProperties;
   };
 
   // ── Results screen ─────────────────────────────────────────────────────────
   if (finalScore) {
     const colourMap = {
-      green:  { fg: '#22c55e', bg: 'rgba(34,197,94,0.1)',  border: 'rgba(34,197,94,0.35)' },
-      yellow: { fg: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.35)' },
-      red:    { fg: '#ef4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.35)' },
+      green:  { fg: 'var(--cds-support-success)', bg: 'var(--cds-support-success-bg)',  border: 'rgba(66,190,101,0.4)' },
+      yellow: { fg: 'var(--cds-support-warning)', bg: 'var(--cds-support-warning-bg)', border: 'rgba(241,194,27,0.4)' },
+      red:    { fg: 'var(--cds-support-error)',   bg: 'var(--cds-support-error-bg)',   border: 'rgba(250,77,86,0.4)' },
     };
     const c = colourMap[finalScore.nodeColour];
 
@@ -116,24 +120,24 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
           initial={{ opacity: 0, scale: 0.93 }}
           animate={{ opacity: 1, scale: 1 }}
           className="glass-panel-bright w-full relative"
-          style={{ maxWidth: 560 }}
+          style={{ maxWidth: 560, borderRadius: 4 }}
         >
           <div className="p-8 flex flex-col items-center gap-6 text-center">
-            <p className="font-terminal text-xs tracking-widest" style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>
+            <p className="font-terminal text-xs tracking-widest" style={{ color: 'var(--cds-text-placeholder)', fontSize: '11px' }}>
               QUIZ COMPLETE
             </p>
 
-            {/* Score circle */}
+            {/* Score block — Carbon flat tile */}
             <motion.div
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-              className="flex flex-col items-center justify-center rounded-full"
+              className="flex flex-col items-center justify-center"
               style={{
                 width: 140, height: 140,
                 background: c.bg,
-                border: `3px solid ${c.fg}`,
-                boxShadow: `0 0 32px ${c.bg}`,
+                border: `2px solid ${c.fg}`,
+                borderRadius: 4,
               }}
             >
               <span className="font-terminal font-bold text-4xl" style={{ color: c.fg }}>
@@ -149,8 +153,8 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="px-4 py-2 rounded-full font-terminal text-sm font-bold"
-              style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.fg }}
+              className="px-4 py-2 font-terminal text-sm font-bold"
+              style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.fg, borderRadius: 4 }}
             >
               {finalScore.nodeColour === 'green' ? '● STRONG UNDERSTANDING'
                 : finalScore.nodeColour === 'yellow' ? '● PARTIAL UNDERSTANDING'
@@ -163,7 +167,7 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
               animate={{ opacity: 1 }}
               transition={{ delay: 0.45 }}
               className="text-sm"
-              style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7, maxWidth: 380 }}
+              style={{ color: 'var(--cds-text-secondary)', lineHeight: 1.7, maxWidth: 380 }}
             >
               {COLOUR_MESSAGES[finalScore.nodeColour]}
             </motion.p>
@@ -174,9 +178,9 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
               onClick={onBack}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-terminal text-sm tracking-widest font-bold transition-all"
-              style={{ background: 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))', color: '#fff' }}
-              whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(0,170,255,0.4)' }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 font-terminal text-sm tracking-widest font-bold transition-all"
+              style={{ background: 'var(--ibm-blue-60)', border: '1px solid var(--cds-border-interactive)', color: '#fff', borderRadius: 4 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
               BACK TO MAP
@@ -194,16 +198,16 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         className="glass-panel-bright w-full relative"
-        style={{ maxWidth: 640, maxHeight: '85vh', overflowY: 'auto' }}
+        style={{ maxWidth: 640, maxHeight: '85vh', overflowY: 'auto', borderRadius: 4 }}
       >
         <div className="p-6 flex flex-col gap-5">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-terminal text-xs tracking-widest" style={{ color: 'var(--color-text-muted)', fontSize: '10px' }}>
+              <p className="font-terminal text-xs tracking-widest" style={{ color: 'var(--cds-text-placeholder)', fontSize: '10px' }}>
                 {node.title.toUpperCase()}
               </p>
-              <p className="font-terminal text-xs mt-0.5" style={{ color: 'var(--color-orbit-blue)', fontSize: '11px' }}>
+              <p className="font-terminal text-xs mt-0.5" style={{ color: 'var(--ibm-blue-40)', fontSize: '11px' }}>
                 Question {currentIdx + 1} of {questions.length}
               </p>
             </div>
@@ -212,14 +216,17 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
               {questions.map((_, i) => (
                 <div
                   key={i}
-                  className="h-1.5 rounded-full transition-all"
+                  className="h-1.5 transition-all"
                   style={{
                     width: 24,
+                    borderRadius: 2,
                     background: i < currentIdx
-                      ? (answers[questions[i].id] === questions[i].correctOptionId ? '#22c55e' : '#ef4444')
+                      ? (answers[questions[i].id] === questions[i].correctOptionId
+                        ? 'var(--cds-support-success)'
+                        : 'var(--cds-support-error)')
                       : i === currentIdx
-                      ? 'var(--color-orbit-blue)'
-                      : 'rgba(255,255,255,0.1)',
+                      ? 'var(--ibm-blue-60)'
+                      : 'var(--cds-border-strong)',
                   }}
                 />
               ))}
@@ -236,16 +243,16 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
               className="flex flex-col gap-4"
             >
               <div
-                className="p-4 rounded-xl"
-                style={{ background: 'rgba(6,13,26,0.7)', border: '1px solid rgba(0,170,255,0.12)' }}
+                className="p-4"
+                style={{ background: 'var(--cds-layer-03)', border: '1px solid var(--cds-border-subtle)', borderRadius: 4 }}
               >
-                <p className="text-base font-semibold leading-relaxed" style={{ color: 'var(--color-text-primary)', lineHeight: 1.65 }}>
+                <p className="text-base font-semibold leading-relaxed" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.65 }}>
                   {current.question}
                 </p>
                 {current.type === 'true_false' && (
                   <span
-                    className="inline-block mt-2 font-terminal text-xs px-2 py-0.5 rounded"
-                    style={{ background: 'rgba(0,170,255,0.08)', color: 'var(--color-orbit-blue)', fontSize: '9px' }}
+                    className="inline-block mt-2 font-terminal text-xs px-2 py-0.5"
+                    style={{ background: 'var(--cds-support-info-bg)', color: 'var(--ibm-blue-40)', fontSize: '9px', borderRadius: 2 }}
                   >
                     TRUE / FALSE
                   </span>
@@ -259,18 +266,23 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
                     key={opt.id}
                     onClick={() => handleSelectAnswer(opt.id)}
                     disabled={selectedAnswer !== null}
-                    className="flex items-start gap-3 p-4 rounded-xl text-left transition-all"
+                    className="flex items-start gap-3 p-4 text-left transition-all"
                     style={optionStyle(opt.id)}
                   >
                     <span
-                      className="font-terminal text-xs flex-shrink-0 mt-0.5 w-5 h-5 rounded flex items-center justify-center"
+                      className="font-terminal text-xs flex-shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center"
                       style={{
-                        background: 'rgba(255,255,255,0.06)',
+                        background: 'var(--cds-layer-01)',
                         color: selectedAnswer !== null
-                          ? opt.id === current.correctOptionId ? '#22c55e' : opt.id === selectedAnswer ? '#ef4444' : 'var(--color-text-muted)'
-                          : 'var(--color-text-secondary)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                          ? opt.id === current.correctOptionId
+                            ? 'var(--cds-support-success)'
+                            : opt.id === selectedAnswer
+                            ? 'var(--cds-support-error)'
+                            : 'var(--cds-text-placeholder)'
+                          : 'var(--cds-text-secondary)',
+                        border: '1px solid var(--cds-border-subtle)',
                         fontSize: '10px',
+                        borderRadius: 2,
                       }}
                     >
                       {opt.id.toUpperCase()}
@@ -278,10 +290,10 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
                     <div className="flex-1">
                       <span className="text-sm" style={{ lineHeight: 1.6 }}>{opt.text}</span>
                       {selectedAnswer !== null && opt.id === current.correctOptionId && (
-                        <CheckCircle size={14} className="inline ml-2" style={{ color: '#22c55e', verticalAlign: 'middle' }} />
+                        <CheckCircle size={14} className="inline ml-2" style={{ color: 'var(--cds-support-success)', verticalAlign: 'middle' }} />
                       )}
                       {selectedAnswer !== null && opt.id === selectedAnswer && selectedAnswer !== current.correctOptionId && (
-                        <XCircle size={14} className="inline ml-2" style={{ color: '#ef4444', verticalAlign: 'middle' }} />
+                        <XCircle size={14} className="inline ml-2" style={{ color: 'var(--cds-support-error)', verticalAlign: 'middle' }} />
                       )}
                     </div>
                   </button>
@@ -294,19 +306,20 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-xl"
+                    className="p-4"
                     style={{
-                      background: answerState === 'correct' ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)',
-                      border: `1px solid ${answerState === 'correct' ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                      background: answerState === 'correct' ? 'var(--cds-support-success-bg)' : 'var(--cds-support-error-bg)',
+                      border: `1px solid ${answerState === 'correct' ? 'rgba(66,190,101,0.3)' : 'rgba(250,77,86,0.3)'}`,
+                      borderRadius: 4,
                     }}
                   >
                     <div
                       className="font-terminal text-xs mb-2"
-                      style={{ color: answerState === 'correct' ? '#22c55e' : '#ef4444', fontSize: '11px' }}
+                      style={{ color: answerState === 'correct' ? 'var(--cds-support-success)' : 'var(--cds-support-error)', fontSize: '11px' }}
                     >
                       {answerState === 'correct' ? '✓ CORRECT' : '✗ INCORRECT'}
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--color-text-primary)', lineHeight: 1.7 }}>
+                    <p className="text-sm" style={{ color: 'var(--cds-text-primary)', lineHeight: 1.7 }}>
                       {current.explanation}
                     </p>
                   </motion.div>
@@ -320,8 +333,8 @@ export default function QuizOverlay({ node, onComplete, onBack }: QuizOverlayPro
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={handleNext}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-terminal text-sm tracking-widest font-bold transition-all"
-                    style={{ background: 'linear-gradient(135deg, var(--color-orbit-blue), var(--color-orbit-glow))', color: '#fff' }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 font-terminal text-sm tracking-widest font-bold transition-all"
+                    style={{ background: 'var(--ibm-blue-60)', border: '1px solid var(--cds-border-interactive)', color: '#fff', borderRadius: 4 }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

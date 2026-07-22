@@ -14,8 +14,8 @@ const DEFAULT_MESSAGES = [
   'Identifying knowledge areas...',
   'Calibrating to your role...',
   'Building your knowledge map...',
-  'Generating quiz questions...',
-  'Preparing verification system...',
+  'Generating verification questions...',
+  'Preparing knowledge system...',
   'Almost ready...',
 ];
 
@@ -30,7 +30,6 @@ export default function LoadingSequence({
   const progressRef = useRef<NodeJS.Timeout | null>(null);
   const typewriterRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cycle messages
   useEffect(() => {
     if (!isVisible) {
       setCurrentIndex(0);
@@ -40,16 +39,12 @@ export default function LoadingSequence({
     }
 
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const next = (prev + 1) % messages.length;
-        return next;
-      });
+      setCurrentIndex((prev) => (prev + 1) % messages.length);
     }, 2500);
 
-    // Progress bar fills over ~15s
     let p = 0;
     progressRef.current = setInterval(() => {
-      p += 100 / 150; // 150 ticks × 100ms = 15s
+      p += 100 / 150;
       setProgress(Math.min(99, p));
     }, 100);
 
@@ -59,7 +54,6 @@ export default function LoadingSequence({
     };
   }, [isVisible, messages.length]);
 
-  // Typewriter effect per message
   useEffect(() => {
     if (typewriterRef.current) clearInterval(typewriterRef.current);
     const msg = messages[currentIndex] ?? '';
@@ -68,9 +62,7 @@ export default function LoadingSequence({
     typewriterRef.current = setInterval(() => {
       i++;
       setDisplayedText(msg.slice(0, i));
-      if (i >= msg.length) {
-        if (typewriterRef.current) clearInterval(typewriterRef.current);
-      }
+      if (i >= msg.length && typewriterRef.current) clearInterval(typewriterRef.current);
     }, 35);
     return () => {
       if (typewriterRef.current) clearInterval(typewriterRef.current);
@@ -86,44 +78,42 @@ export default function LoadingSequence({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 flex flex-col items-center justify-center z-50"
-          style={{ background: 'var(--color-void)' }}
+          style={{ background: 'var(--cds-background)' }}
         >
-          {/* Animated orbit rings */}
-          <div className="relative w-48 h-48 mb-10">
-            {[40, 65, 90].map((radius, i) => (
-              <div
-                key={i}
-                className="orbit-ring"
-                style={{
-                  width: radius * 2,
-                  height: radius * 2,
-                  animationDuration: `${3 + i * 1.5}s`,
-                  animation: `orbit-rotate ${3 + i * 1.5}s linear infinite`,
-                }}
-              >
-                <div
-                  className="orbit-dot"
-                  style={{
-                    background: i === 0
-                      ? 'var(--color-orbit-blue)'
-                      : i === 1
-                      ? 'var(--color-signal)'
-                      : 'var(--color-gold)',
-                  }}
-                />
-              </div>
-            ))}
-            {/* Central sun dot */}
-            <div
-              className="absolute rounded-full animate-pulse-glow"
+          {/* IBM Carbon loading spinner — concentric squares style */}
+          <div className="relative mb-10" style={{ width: 80, height: 80 }}>
+            {/* Outer rotating ring */}
+            <motion.div
               style={{
-                width: 14,
-                height: 14,
-                background: 'var(--color-gold)',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                boxShadow: '0 0 20px var(--color-gold)',
+                position: 'absolute',
+                inset: 0,
+                border: '3px solid var(--cds-border-subtle)',
+                borderTopColor: 'var(--ibm-blue-60)',
+                borderRadius: '50%',
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.0, ease: 'linear', repeat: Infinity }}
+            />
+            {/* Middle ring */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                inset: 14,
+                border: '2px solid var(--cds-border-subtle)',
+                borderTopColor: 'var(--ibm-blue-40)',
+                borderRadius: '50%',
+              }}
+              animate={{ rotate: -360 }}
+              transition={{ duration: 1.6, ease: 'linear', repeat: Infinity }}
+            />
+            {/* Inner IBM blue dot */}
+            <div
+              className="animate-pulse-glow"
+              style={{
+                position: 'absolute',
+                inset: 28,
+                background: 'var(--ibm-blue-60)',
+                borderRadius: '50%',
               }}
             />
           </div>
@@ -133,8 +123,8 @@ export default function LoadingSequence({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-3xl font-bold mb-6 tracking-widest"
-            style={{ color: 'var(--color-text-primary)' }}
+            className="text-2xl font-bold mb-6 tracking-widest"
+            style={{ color: 'var(--cds-text-primary)', letterSpacing: '0.1em' }}
           >
             BUILDING YOUR KNOWLEDGE MAP
           </motion.h1>
@@ -142,26 +132,24 @@ export default function LoadingSequence({
           {/* Typewriter message */}
           <div
             className="font-terminal text-sm h-6 mb-8"
-            style={{ color: 'var(--color-text-terminal)', minWidth: 280, textAlign: 'center' }}
+            style={{ color: 'var(--cds-text-secondary)', minWidth: 280, textAlign: 'center' }}
           >
             {displayedText}
             <span className="typewriter-cursor" />
           </div>
 
-          {/* Progress bar */}
+          {/* Progress bar — Carbon style (no rounded caps) */}
           <div
-            className="rounded-full overflow-hidden"
             style={{
               width: 320,
-              height: 3,
-              background: 'rgba(0,170,255,0.1)',
-              border: '1px solid rgba(0,170,255,0.2)',
+              height: 4,
+              background: 'var(--cds-border-subtle)',
             }}
           >
             <motion.div
-              className="h-full rounded-full"
               style={{
-                background: 'linear-gradient(90deg, var(--color-orbit-blue), var(--color-signal))',
+                background: 'var(--ibm-blue-60)',
+                height: '100%',
                 width: `${progress}%`,
               }}
               transition={{ duration: 0.1 }}
@@ -169,7 +157,7 @@ export default function LoadingSequence({
           </div>
           <span
             className="font-terminal text-xs mt-2"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: 'var(--cds-text-placeholder)' }}
           >
             {Math.round(progress)}%
           </span>

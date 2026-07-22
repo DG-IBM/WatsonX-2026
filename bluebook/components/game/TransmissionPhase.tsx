@@ -16,8 +16,8 @@ export default function TransmissionPhase({ planet, onAccept }: TransmissionPhas
       </p>
       <button
         onClick={onAccept}
-        className="w-full py-3 rounded-xl font-terminal text-sm tracking-widest font-bold"
-        style={{ background: 'linear-gradient(135deg, var(--color-gold), #ff8c00)', color: 'var(--color-void)' }}
+        className="w-full py-3 font-terminal text-sm tracking-widest font-bold"
+        style={{ background: 'var(--ibm-blue-60)', border: '1px solid var(--cds-border-interactive)', color: '#fff', borderRadius: 4 }}
       >
         GOT IT
       </button>
